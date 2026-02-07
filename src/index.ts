@@ -1,10 +1,12 @@
 /**
- * siko - Runtime execution signal analyzer
+ * @siko/signal - Runtime execution signal analyzer
  * @author Mayukh Sinha
  */
 
-export const version = '0.1.0';
+export const version = '0.2.0';
 
-export function hello() {
-  return 'Hello from siko! Setup complete.';
-}
+// Export runtime tracker for instrumented code
+export { __siko_track } from './runtime';
+
+// Export types
+export type { ExecutionData, FunctionInfo, StaticInventory } from './runtime/types';
