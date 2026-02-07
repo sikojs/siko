@@ -110,6 +110,79 @@ function shouldSkipFunction(path: NodePath<any>): boolean {
 }
 
 /**
+ * Check if file already has __siko_track import
+ */
+function hasTrackingImport(path: NodePath<t.Program>): boolean {
+  let hasImport = false;
+
+  for (const statement of path.node.body) {
+    // Check for: const { __siko_track } = require(...)
+    if (
+      t.isVariableDeclaration(statement) &&
+      statement.declarations.length > 0
+    ) {
+      const declarator = statement.declarations[0];
+      if (
+        t.isObjectPattern(declarator.id) &&
+        declarator.id.properties.some(
+          (prop) =>
+            t.isObjectProperty(prop) &&
+            t.isIdentifier(prop.key) &&
+            prop.key.name === '__siko_track'
+        )
+      ) {
+        hasImport = true;
+        break;
+      }
+    }
+
+    // Check for: import { __siko_track } from ...
+    if (
+      t.isImportDeclaration(statement) &&
+      statement.specifiers.some(
+        (spec) =>
+          t.isImportSpecifier(spec) &&
+          t.isIdentifier(spec.imported) &&
+          spec.imported.name === '__siko_track'
+      )
+    ) {
+      hasImport = true;
+      break;
+    }
+  }
+
+  return hasImport;
+}
+
+/**
+ * Inject __siko_track import/require at top of file
+ */
+function injectTrackingImport(path: NodePath<t.Program>): void {
+  // Determine the package path - use relative path to the built siko package
+  const packagePath = 'siko/dist/runtime';
+
+  // Create require statement: const { __siko_track } = require('siko/dist/runtime');
+  const requireStatement = t.variableDeclaration('const', [
+    t.variableDeclarator(
+      t.objectPattern([
+        t.objectProperty(
+          t.identifier('__siko_track'),
+          t.identifier('__siko_track'),
+          false,
+          true
+        )
+      ]),
+      t.callExpression(t.identifier('require'), [
+        t.stringLiteral(packagePath)
+      ])
+    )
+  ]);
+
+  // Insert at the beginning of the file
+  path.node.body.unshift(requireStatement);
+}
+
+/**
  * Babel plugin to instrument functions
  */
 export default function sikoInstrumentationPlugin(): PluginObj<PluginState> {
@@ -122,6 +195,16 @@ export default function sikoInstrumentationPlugin(): PluginObj<PluginState> {
     },
 
     visitor: {
+      // Inject tracking import at the top of the file
+      Program: {
+        enter(path) {
+          // Only inject if we haven't already
+          if (!hasTrackingImport(path)) {
+            injectTrackingImport(path);
+          }
+        }
+      },
+
       // Instrument function declarations: function foo() {}
       FunctionDeclaration(path, state) {
         if (shouldSkipFunction(path)) return;
@@ -294,7 +377,6 @@ export default function sikoInstrumentationPlugin(): PluginObj<PluginState> {
 
     post() {
       // Store static inventory for this file
-      // We'll write this to .siko-signal.inventory.json later
       if (this.functions.length > 0) {
         const fs = require('fs');
 
@@ -306,7 +388,6 @@ export default function sikoInstrumentationPlugin(): PluginObj<PluginState> {
           try {
             inventory = JSON.parse(fs.readFileSync(inventoryPath, 'utf8'));
           } catch (error) {
-            // If invalid, start fresh
             inventory = { functions: [] };
           }
         }
