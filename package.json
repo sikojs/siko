@@ -1,6 +1,6 @@
 {
   "name": "siko",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Runtime execution signal analyzer for JavaScript & TypeScript - identify dead code with confidence",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
