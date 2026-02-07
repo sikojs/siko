@@ -25,7 +25,7 @@ function generateFunctionId(
 /**
  * Get function name from various function types
  */
-function getFunctionName(path: NodePath<any>): string {
+function getFunctionName(path: NodePath): string {
   const node = path.node;
 
   // Named function declaration: function foo() {}
@@ -66,7 +66,7 @@ function getFunctionName(path: NodePath<any>): string {
 /**
  * Determine function type
  */
-function getFunctionType(path: NodePath<any>): 'function' | 'method' | 'arrow' {
+function getFunctionType(path: NodePath): 'function' | 'method' | 'arrow' {
   const node = path.node;
 
   if (t.isArrowFunctionExpression(node)) {
@@ -83,7 +83,9 @@ function getFunctionType(path: NodePath<any>): 'function' | 'method' | 'arrow' {
 /**
  * Check if we should skip instrumenting this function
  */
-function shouldSkipFunction(path: NodePath<any>): boolean {
+function shouldSkipFunction(path: NodePath): boolean {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+const node: any = path.node;
   const name = getFunctionName(path);
 
   // Skip anonymous functions (v1 limitation)
@@ -92,7 +94,6 @@ function shouldSkipFunction(path: NodePath<any>): boolean {
   }
 
   // Skip if already instrumented
-  const node = path.node;
   if (t.isBlockStatement(node.body)) {
     const firstStatement = node.body.body[0];
     if (
@@ -380,14 +381,14 @@ export default function sikoInstrumentationPlugin(): PluginObj<PluginState> {
       if (this.functions.length > 0) {
         const fs = require('fs');
 
-        let inventory: any = { functions: [] };
+        let inventory: { functions: FunctionInfo[]; timestamp?: string; totalFunctions?: number } = { functions: [] };
         const inventoryPath = '.siko-signal.inventory.json';
 
         // Read existing inventory
         if (fs.existsSync(inventoryPath)) {
           try {
             inventory = JSON.parse(fs.readFileSync(inventoryPath, 'utf8'));
-          } catch (error) {
+          } catch {
             inventory = { functions: [] };
           }
         }

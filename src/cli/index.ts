@@ -51,8 +51,9 @@ program
       });
 
       process.exit(exitCode);
-    } catch (error: any) {
-      console.error(chalk.red('❌ Failed to run command:'), error.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(chalk.red('❌ Failed to run command:'), message);
       process.exit(1);
     }
   });
@@ -141,8 +142,9 @@ program
         }
       }
 
-    } catch (error: any) {
-      console.error(chalk.red('❌ Failed to generate report:'), error.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(chalk.red('❌ Failed to generate report:'), message);
       process.exit(1);
     }
   });
@@ -206,8 +208,9 @@ program
       } else {
         console.log(chalk.gray('No files to clean'));
       }
-    } catch (error: any) {
-      console.error(chalk.red('❌ Failed to clean:'), error.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(chalk.red('❌ Failed to clean:'), message);
       process.exit(1);
     }
   });

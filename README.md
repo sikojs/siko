@@ -5,6 +5,12 @@
 [![npm version](https://badge.fury.io/js/siko.svg)](https://www.npmjs.com/package/siko)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+[![CI](https://github.com/sikojs/signal/actions/workflows/ci.yml/badge.svg)](https://github.com/sikojs/signal/actions/workflows/ci.yml)
+[![npm version](https://badge.fury.io/js/siko.svg)](https://www.npmjs.com/package/siko)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+**Status:** 🚧 Under active development
+
 **siko** reveals which parts of your codebase emit real runtime signal during execution, helping you identify and remove dead code with confidence.
 
 ## ✨ Features

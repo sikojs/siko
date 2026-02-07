@@ -3,7 +3,7 @@
  */
 
 import * as fs from 'fs';
-import { ExecutionData, StaticInventory, FunctionInfo } from '../runtime/types';
+import { ExecutionData, StaticInventory } from '../runtime/types';
 
 export interface JsonReport {
   summary: {

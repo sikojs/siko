@@ -8,7 +8,7 @@ import * as path from 'path';
 import chalk from 'chalk';
 import * as babel from '@babel/core';
 import sikoInstrumentationPlugin from '../instrumentation/babel-plugin';
-import { SikoConfig, DEFAULT_CONFIG } from '../config/types';
+import { SikoConfig } from '../config/types';
 
 export interface RunOptions {
   clean?: boolean;

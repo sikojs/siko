@@ -3,7 +3,6 @@
  */
 
 import * as fs from 'fs';
-import * as path from 'path';
 import { tracker, __siko_track } from '../../src/runtime/tracker';
 
 describe('Runtime Tracker', () => {
