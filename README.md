@@ -108,6 +108,9 @@ git commit -m "fix: resolve CLI crash on exit"
 git commit -m "docs: update installation guide"
 ```
 
+
+
+
 See our [Contributing Guide](CONTRIBUTING.md) for detailed guidelines.
 
 ## License
