@@ -1,0 +1,57 @@
+{
+  "name": "@siko/signal",
+  "version": "0.0.1",
+  "description": "Runtime execution signal analyzer for JavaScript & TypeScript",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "siko": "dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean",
+    "test": "echo \"Tests coming soon\" && exit 0",
+    "lint": "echo \"Linting coming soon\" && exit 0",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "dead-code",
+    "code-analysis",
+    "runtime-analysis",
+    "unused-code",
+    "instrumentation",
+    "babel",
+    "typescript"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sikojs/signal.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sikojs/signal/issues"
+  },
+  "homepage": "https://siko.dev",
+  "author": "Mayukh Sinha",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@babel/core": "^7.23.0",
+    "@babel/parser": "^7.23.0",
+    "@babel/traverse": "^7.23.0",
+    "@babel/types": "^7.23.0",
+    "commander": "^11.0.0",
+    "chalk": "^4.1.2"
+  }
+}
