@@ -1,10 +1,10 @@
 /**
- * @siko/signal - Runtime execution signal analyzer
+ * siko - Runtime execution signal analyzer
  * @author Mayukh Sinha
  */
 
-export const version = '0.0.1';
+export const version = '0.1.0';
 
 export function hello() {
-  return 'Hello from @siko/signal! Setup complete.';
+  return 'Hello from siko! Setup complete.';
 }
