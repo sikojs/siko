@@ -1,6 +1,6 @@
 {
   "name": "siko",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Runtime execution signal analyzer for JavaScript & TypeScript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
