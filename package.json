@@ -1,7 +1,7 @@
 {
   "name": "siko",
   "version": "0.2.1",
-  "description": "Runtime execution signal analyzer for JavaScript & TypeScript",
+  "description": "Runtime execution signal analyzer for JavaScript & TypeScript - identify dead code with confidence",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
@@ -11,9 +11,11 @@
     "build": "tsc",
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
-    "test": "echo \"Tests coming soon\" && exit 0",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "lint": "echo \"Linting coming soon\" && exit 0",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
     "dead-code",
@@ -23,8 +25,14 @@
     "instrumentation",
     "babel",
     "typescript",
-    "signal",
-    "siko"
+    "javascript",
+    "coverage",
+    "testing",
+    "refactoring",
+    "static-analysis",
+    "code-quality",
+    "ci-cd",
+    "developer-tools"
   ],
   "repository": {
     "type": "git",
@@ -34,7 +42,7 @@
     "url": "https://github.com/sikojs/signal/issues"
   },
   "homepage": "https://siko.dev",
-  "author": "Mayukh Sinha",
+  "author": "Mayukh Sinha <mayukh2026@gmail.com>",
   "license": "MIT",
   "engines": {
     "node": ">=16.0.0"
@@ -42,12 +50,16 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "devDependencies": {
     "@types/babel__core": "^7.20.5",
-    "@types/babel__traverse": "^7.28.0",
+    "@types/babel__traverse": "^7.20.5",
+    "@types/jest": "^29.0.0",
     "@types/node": "^20.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
     "typescript": "^5.0.0"
   },
   "dependencies": {
