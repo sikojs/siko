@@ -62,6 +62,54 @@ npm run build
 node dist/cli/index.js
 ```
 
+## Contributing
+
+We welcome contributions! Whether it's bug fixes, new features, or documentation improvements.
+
+### Quick Start for Contributors
+```bash
+# 1. Fork the repo on GitHub
+
+# 2. Clone your fork
+git clone https://github.com/YOUR_USERNAME/signal.git
+cd signal
+
+# 3. Add upstream remote
+git remote add upstream https://github.com/sikojs/signal.git
+
+# 4. Install dependencies
+npm install
+
+# 5. Create a branch
+git checkout -b feat/your-feature
+
+# 6. Make changes, commit, and push
+git commit -m "feat: add awesome feature"
+git push origin feat/your-feature
+
+# 7. Open a Pull Request on GitHub
+```
+
+### Commit Message Format
+
+Please use descriptive commit messages:
+
+- `feat:` - New features
+- `fix:` - Bug fixes
+- `docs:` - Documentation changes
+- `refactor:` - Code refactoring
+- `test:` - Test updates
+- `chore:` - Maintenance tasks
+
+**Example:**
+```bash
+git commit -m "feat: add runtime execution tracker"
+git commit -m "fix: resolve CLI crash on exit"
+git commit -m "docs: update installation guide"
+```
+
+See our [Contributing Guide](CONTRIBUTING.md) for detailed guidelines.
+
 ## License
 
 MIT © Mayukh Sinha
