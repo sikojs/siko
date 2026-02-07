@@ -2,11 +2,47 @@ name: Publish to NPM
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
+    paths:
+      - 'package.json'
+
+permissions:
+  contents: write
 
 jobs:
-  build-and-publish:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version-changed: ${{ steps.check.outputs.changed }}
+      current-version: ${{ steps.check.outputs.current }}
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - name: Check if version changed
+        id: check
+        run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          git checkout HEAD^
+          PREVIOUS_VERSION=$(node -p "require('./package.json').version")
+          git checkout -
+          
+          echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          
+          if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "✅ Version changed from $PREVIOUS_VERSION to $CURRENT_VERSION"
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "⏭️  Version unchanged: $CURRENT_VERSION"
+          fi
+
+  publish:
+    needs: check-version
+    if: needs.check-version.outputs.version-changed == 'true'
     runs-on: ubuntu-latest
     
     steps:
@@ -29,3 +65,13 @@ jobs:
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ needs.check-version.outputs.current-version }}
+          release_name: Release v${{ needs.check-version.outputs.current-version }}
+          draft: false
+          prerelease: false
