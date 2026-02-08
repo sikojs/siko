@@ -1,5 +1,5 @@
 /**
- * @siko/signal - Runtime execution signal analyzer
+ * @siko - Runtime execution analyzer
  * @author Mayukh Sinha
  */
 

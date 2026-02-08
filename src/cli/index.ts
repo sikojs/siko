@@ -2,7 +2,7 @@
 
 /**
  * siko CLI
- * Runtime execution signal analyzer for JavaScript & TypeScript
+ * Runtime execution analyzer for JavaScript & TypeScript
  */
 
 import { Command } from 'commander';
@@ -24,7 +24,7 @@ const program = new Command();
 
 program
   .name('siko')
-  .description('Runtime execution signal analyzer for JavaScript & TypeScript')
+  .description('Runtime execution analyzer for JavaScript & TypeScript')
   .version('0.3.1');
 
 /**
