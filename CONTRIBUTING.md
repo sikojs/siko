@@ -31,18 +31,18 @@ Be respectful, inclusive, and constructive in all interactions. We're building a
 ### Fork and Clone
 
 1. **Fork the repository** on GitHub
-   - Go to https://github.com/sikojs/signal
+   - Go to https://github.com/sikojs/siko
    - Click the "Fork" button in the top right
 
 2. **Clone your fork**
 ```bash
-   git clone https://github.com/YOUR_USERNAME/signal.git
-   cd signal
+   git clone https://github.com/YOUR_USERNAME/siko.git
+   cd siko
 ```
 
 3. **Add upstream remote**
 ```bash
-   git remote add upstream https://github.com/sikojs/signal.git
+   git remote add upstream https://github.com/sikojs/siko.git
    git remote -v
 ```
 
@@ -467,7 +467,7 @@ Relates to #456
 
 ## Project Structure
 ```
-signal/
+siko/
 ├── src/
 │   ├── cli/              # CLI commands and interface
 │   ├── config/           # Configuration loader and types
@@ -543,9 +543,9 @@ Maintainers will handle versioning and publishing.
 
 ## Questions?
 
-- **Bug Reports**: [Open an issue](https://github.com/sikojs/signal/issues/new)
-- **Feature Requests**: [Open an issue](https://github.com/sikojs/signal/issues/new)
-- **Questions**: [GitHub Discussions](https://github.com/sikojs/signal/discussions)
+- **Bug Reports**: [Open an issue](https://github.com/sikojs/siko/issues/new)
+- **Feature Requests**: [Open an issue](https://github.com/sikojs/siko/issues/new)
+- **Questions**: [GitHub Discussions](https://github.com/sikojs/siko/discussions)
 
 ## Recognition
 
