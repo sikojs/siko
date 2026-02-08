@@ -39,10 +39,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sikojs/siko.git"
+    "url": "git+https://github.com/neu-msinha/siko.git"
   },
   "bugs": {
-    "url": "https://github.com/sikojs/siko/issues"
+    "url": "https://github.com/neu-msinha/siko/issues"
   },
   "homepage": "https://siko.dev",
   "author": "Mayukh Sinha <mayukh2026@gmail.com>",

@@ -2,7 +2,7 @@
 
 > **The first runtime execution analyzer for JavaScript & TypeScript**
 
-[![CI](https://github.com/sikojs/siko/actions/workflows/ci.yml/badge.svg)](https://github.com/sikojs/siko/actions/workflows/ci.yml)
+[![CI](https://github.com/neu-msinha/siko/actions/workflows/ci.yml/badge.svg)](https://github.com/neu-msinha/siko/actions/workflows/ci.yml)
 [![npm version](https://badge.fury.io/js/siko.svg)](https://www.npmjs.com/package/siko)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -719,7 +719,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for deta
 
 ```bash
 # Clone repository
-git clone https://github.com/sikojs/siko.git
+git clone https://github.com/neu-msinha/siko.git
 cd siko
 
 # Install dependencies
@@ -745,9 +745,9 @@ MIT © Mayukh Sinha
 
 ## 🔗 Links
 
-- [GitHub Repository](https://github.com/sikojs/siko)
+- [GitHub Repository](https://github.com/neu-msinha/siko)
 - [npm Package](https://www.npmjs.com/package/siko)
-- [Issue Tracker](https://github.com/sikojs/siko/issues)
+- [Issue Tracker](https://github.com/neu-msinha/siko/issues)
 - [Contributing Guide](CONTRIBUTING.md)
 - [Changelog](CHANGELOG.md)
 

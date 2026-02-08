@@ -31,7 +31,7 @@ Be respectful, inclusive, and constructive in all interactions. We're building a
 ### Fork and Clone
 
 1. **Fork the repository** on GitHub
-   - Go to https://github.com/sikojs/siko
+   - Go to https://github.com/neu-msinha/siko
    - Click the "Fork" button in the top right
 
 2. **Clone your fork**
@@ -42,7 +42,7 @@ Be respectful, inclusive, and constructive in all interactions. We're building a
 
 3. **Add upstream remote**
 ```bash
-   git remote add upstream https://github.com/sikojs/siko.git
+   git remote add upstream https://github.com/neu-msinha/siko.git
    git remote -v
 ```
 
@@ -543,9 +543,9 @@ Maintainers will handle versioning and publishing.
 
 ## Questions?
 
-- **Bug Reports**: [Open an issue](https://github.com/sikojs/siko/issues/new)
-- **Feature Requests**: [Open an issue](https://github.com/sikojs/siko/issues/new)
-- **Questions**: [GitHub Discussions](https://github.com/sikojs/siko/discussions)
+- **Bug Reports**: [Open an issue](https://github.com/neu-msinha/siko/issues/new)
+- **Feature Requests**: [Open an issue](https://github.com/neu-msinha/siko/issues/new)
+- **Questions**: [GitHub Discussions](https://github.com/neu-msinha/siko/discussions)
 
 ## Recognition
 
