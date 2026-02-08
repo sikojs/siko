@@ -14,10 +14,7 @@ export interface ThresholdResult {
 /**
  * Check if thresholds are met
  */
-export function checkThresholds(
-  report: JsonReport,
-  config: SikoConfig
-): ThresholdResult {
+export function checkThresholds(report: JsonReport, config: SikoConfig): ThresholdResult {
   const failures: string[] = [];
   const thresholds = config.thresholds || {};
 
@@ -41,7 +38,7 @@ export function checkThresholds(
 
   return {
     passed: failures.length === 0,
-    failures
+    failures,
   };
 }
 
@@ -53,7 +50,7 @@ export function printThresholdResults(result: ThresholdResult): void {
     console.log(chalk.green('\n✅ All thresholds passed!'));
   } else {
     console.log(chalk.red('\n❌ Threshold violations:'));
-    result.failures.forEach(failure => {
+    result.failures.forEach((failure) => {
       console.log(chalk.red(`  • ${failure}`));
     });
   }

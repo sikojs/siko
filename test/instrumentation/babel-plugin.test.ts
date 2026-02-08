@@ -13,7 +13,7 @@ describe('Babel Instrumentation Plugin', () => {
     `;
 
     const instrumented = instrumentCode(code, { filename: 'test.js' });
-    
+
     expect(instrumented).toContain('__siko_track');
     expect(instrumented).toContain('testFunction:');
     expect(instrumented).toContain('test.js');
@@ -27,7 +27,7 @@ describe('Babel Instrumentation Plugin', () => {
     `;
 
     const instrumented = instrumentCode(code, { filename: 'test.js' });
-    
+
     expect(instrumented).toContain('__siko_track');
     expect(instrumented).toContain('testFunc:');
     expect(instrumented).toContain('test.js');
@@ -43,7 +43,7 @@ describe('Babel Instrumentation Plugin', () => {
     `;
 
     const instrumented = instrumentCode(code, { filename: 'test.js' });
-    
+
     expect(instrumented).toContain('__siko_track');
     expect(instrumented).toContain('testMethod:');
     expect(instrumented).toContain('test.js');
@@ -57,7 +57,7 @@ describe('Babel Instrumentation Plugin', () => {
     `;
 
     const instrumented = instrumentCode(code, { filename: 'test.js' });
-    
+
     // Should not add tracking for anonymous function
     expect(instrumented).not.toContain('anonymous');
   });
@@ -70,7 +70,7 @@ describe('Babel Instrumentation Plugin', () => {
     `;
 
     const instrumented = instrumentCode(code, { filename: 'test.js' });
-    
+
     expect(instrumented).toContain('require');
     expect(instrumented).toContain('__siko_track');
   });
@@ -83,7 +83,7 @@ describe('Babel Instrumentation Plugin', () => {
     `;
 
     const instrumented = instrumentCode(code, { filename: 'test.js' });
-    
+
     expect(instrumented).toContain('__siko_track');
     expect(instrumented).toContain('myFunc:');
   });
@@ -98,7 +98,7 @@ describe('Babel Instrumentation Plugin', () => {
     `;
 
     const instrumented = instrumentCode(code, { filename: 'test.js' });
-    
+
     expect(instrumented).toContain('__siko_track');
     expect(instrumented).toContain('myMethod:');
   });
@@ -109,7 +109,7 @@ describe('Babel Instrumentation Plugin', () => {
     `;
 
     const instrumented = instrumentCode(code, { filename: 'test.js' });
-    
+
     expect(instrumented).toContain('__siko_track');
     expect(instrumented).toContain('return');
   });

@@ -25,7 +25,7 @@ describe('Runtime Tracker', () => {
 
   test('should record function execution', () => {
     __siko_track('testFunction:test.js:1:0');
-    
+
     const executions = tracker.getExecutions();
     expect(executions['testFunction:test.js:1:0']).toBe(1);
   });
@@ -34,7 +34,7 @@ describe('Runtime Tracker', () => {
     __siko_track('testFunction:test.js:1:0');
     __siko_track('testFunction:test.js:1:0');
     __siko_track('testFunction:test.js:1:0');
-    
+
     const executions = tracker.getExecutions();
     expect(executions['testFunction:test.js:1:0']).toBe(3);
   });
@@ -43,7 +43,7 @@ describe('Runtime Tracker', () => {
     __siko_track('function1:test.js:1:0');
     __siko_track('function2:test.js:5:0');
     __siko_track('function3:test.js:10:0');
-    
+
     const executions = tracker.getExecutions();
     expect(Object.keys(executions)).toHaveLength(3);
     expect(executions['function1:test.js:1:0']).toBe(1);
@@ -54,7 +54,7 @@ describe('Runtime Tracker', () => {
   test('should clear executions', () => {
     __siko_track('testFunction:test.js:1:0');
     expect(Object.keys(tracker.getExecutions())).toHaveLength(1);
-    
+
     tracker.clear();
     expect(Object.keys(tracker.getExecutions())).toHaveLength(0);
   });

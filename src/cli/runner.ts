@@ -13,7 +13,7 @@ import { SikoConfig } from '../config/types';
 export interface RunOptions {
   clean?: boolean;
   verbose?: boolean;
-  config?: SikoConfig;  // <-- Add this line
+  config?: SikoConfig; // <-- Add this line
 }
 
 /**
@@ -28,7 +28,7 @@ function getRuntimePath(): string {
 }
 
 /**
- * Instrument a single file with absolute runtime path
+ * Instrument a single file and save source map
  */
 function instrumentFile(filePath: string): string {
   const code = fs.readFileSync(filePath, 'utf8');
@@ -39,19 +39,26 @@ function instrumentFile(filePath: string): string {
     plugins: [sikoInstrumentationPlugin],
     parserOpts: {
       sourceType: 'module',
-      plugins: ['jsx', 'typescript']
-    }
+      plugins: ['jsx', 'typescript'],
+    },
+    sourceMaps: true,
+    sourceFileName: filePath,
   });
 
   if (!result || !result.code) {
     throw new Error(`Failed to instrument ${filePath}`);
   }
 
-  // Replace the generic require with absolute path
   const instrumented = result.code.replace(
     /require\(['"]siko\/dist\/runtime['"]\)/g,
     `require('${runtimePath}')`
   );
+
+  // Save source map alongside instrumented file
+  if (result.map) {
+    const mapPath = filePath + '.siko.map';
+    fs.writeFileSync(mapPath, JSON.stringify(result.map));
+  }
 
   return instrumented;
 }
@@ -120,6 +127,12 @@ export async function runWithInstrumentation(
     try {
       fs.copyFileSync(backup, original);
       fs.unlinkSync(backup);
+
+      // Clean up source map
+      const mapPath = original + '.siko.map';
+      if (fs.existsSync(mapPath)) {
+        fs.unlinkSync(mapPath);
+      }
     } catch (error) {
       console.error(chalk.red(`Failed to restore ${original}`), error);
     }
@@ -148,7 +161,7 @@ function executeCommand(command: string[]): Promise<number> {
 
     const child = spawn(cmd, args, {
       stdio: 'inherit',
-      shell: true
+      shell: true,
     });
 
     child.on('close', (code) => {

@@ -6,12 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { SikoConfig, DEFAULT_CONFIG } from './types';
 
-const CONFIG_FILES = [
-  'siko.config.js',
-  'siko.config.json',
-  '.sikorc.json',
-  '.sikorc.js'
-];
+const CONFIG_FILES = ['siko.config.js', 'siko.config.json', '.sikorc.json', '.sikorc.js'];
 
 /**
  * Load configuration from file
@@ -65,28 +60,23 @@ function loadConfigFile(filePath: string): Partial<SikoConfig> {
 /**
  * Deep merge configurations
  */
-function mergeConfig(
-  defaults: SikoConfig,
-  custom: Partial<SikoConfig>
-): SikoConfig {
+function mergeConfig(defaults: SikoConfig, custom: Partial<SikoConfig>): SikoConfig {
   return {
     include: custom.include || defaults.include,
-    exclude: custom.exclude
-      ? [...(defaults.exclude || []), ...custom.exclude]
-      : defaults.exclude,
+    exclude: custom.exclude ? [...(defaults.exclude || []), ...custom.exclude] : defaults.exclude,
     extensions: custom.extensions || defaults.extensions,
     output: {
       ...defaults.output,
-      ...custom.output
+      ...custom.output,
     },
     thresholds: {
       ...defaults.thresholds,
-      ...custom.thresholds
+      ...custom.thresholds,
     },
     report: {
       ...defaults.report,
-      ...custom.report
-    }
+      ...custom.report,
+    },
   };
 }
 

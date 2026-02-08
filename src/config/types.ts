@@ -61,6 +61,16 @@ export interface SikoConfig {
      */
     showAll?: boolean;
   };
+
+  /**
+   * Source map configuration
+   */
+  sourceMaps?: {
+    /**
+     * Enable source map resolution
+     */
+    enabled?: boolean;
+  };
 }
 
 export const DEFAULT_CONFIG: SikoConfig = {
@@ -77,20 +87,23 @@ export const DEFAULT_CONFIG: SikoConfig = {
     '*.test.js',
     '*.test.ts',
     '*.spec.js',
-    '*.spec.ts'
+    '*.spec.ts',
   ],
   extensions: ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs'],
   output: {
     inventory: '.siko-signal.inventory.json',
-    execution: '.siko-signal.exec.json'
+    execution: '.siko-signal.exec.json',
   },
   thresholds: {
     coverage: undefined,
-    maxUnused: undefined
+    maxUnused: undefined,
   },
   report: {
     format: 'terminal',
     verbose: false,
-    showAll: false
-  }
+    showAll: false,
+  },
+  sourceMaps: {
+    enabled: true,
+  },
 };

@@ -20,7 +20,7 @@ class RuntimeTracker {
 
     // Write execution data on process exit
     process.on('exit', () => this.writeExecutionData());
-    
+
     // Handle different exit scenarios
     process.on('SIGINT', () => process.exit(0));
     process.on('SIGTERM', () => process.exit(0));
@@ -52,7 +52,7 @@ class RuntimeTracker {
       timestamp: new Date().toISOString(),
       executions: this.executions,
       totalFunctions: Object.keys(this.executions).length,
-      totalExecutions: Object.values(this.executions).reduce((a, b) => a + b, 0)
+      totalExecutions: Object.values(this.executions).reduce((a, b) => a + b, 0),
     };
 
     try {

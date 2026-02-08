@@ -22,7 +22,7 @@ const DEFAULT_EXCLUDE = [
   'coverage',
   '.git',
   '.siko-signal.exec.json',
-  '.siko-signal.inventory.json'
+  '.siko-signal.inventory.json',
 ];
 
 /**
@@ -30,19 +30,19 @@ const DEFAULT_EXCLUDE = [
  */
 function shouldExclude(filePath: string, excludePatterns: string[]): boolean {
   const normalizedPath = filePath.replace(/\\/g, '/');
-  
-  return excludePatterns.some(pattern => {
+
+  return excludePatterns.some((pattern) => {
     // Try glob matching first
     if (pattern.includes('*') || pattern.includes('?')) {
       // It's a glob pattern
       return minimatch(normalizedPath, pattern, { dot: true });
     }
-    
+
     // Direct string match for literal paths
     if (normalizedPath.includes(pattern)) {
       return true;
     }
-    
+
     // Check if any parent directory matches
     const parts = normalizedPath.split('/');
     return parts.includes(pattern);
@@ -52,10 +52,7 @@ function shouldExclude(filePath: string, excludePatterns: string[]): boolean {
 /**
  * Recursively find files with given extensions
  */
-export function findFiles(
-  dir: string,
-  options: FileDiscoveryOptions = {}
-): string[] {
+export function findFiles(dir: string, options: FileDiscoveryOptions = {}): string[] {
   const extensions = options.extensions || DEFAULT_EXTENSIONS;
   const exclude = [...DEFAULT_EXCLUDE, ...(options.exclude || [])];
   const results: string[] = [];
@@ -109,7 +106,7 @@ export function findProjectFiles(options: FileDiscoveryOptions = {}): string[] {
   if (allFiles.length === 0) {
     const files = findFiles('.', {
       ...options,
-      exclude: [...DEFAULT_EXCLUDE, ...(options.exclude || [])]
+      exclude: [...DEFAULT_EXCLUDE, ...(options.exclude || [])],
     });
     return files;
   }

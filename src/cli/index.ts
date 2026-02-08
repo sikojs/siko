@@ -8,13 +8,13 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import * as fs from 'fs';
-import { 
-  generateReport, 
+import {
+  generateReport,
   generateJsonReport,
   writeJsonReport,
   printJsonReport,
   checkThresholds,
-  printThresholdResults
+  printThresholdResults,
 } from '../reporter';
 import { ExecutionData, StaticInventory } from '../runtime/types';
 import { runWithInstrumentation } from './runner';
@@ -25,7 +25,7 @@ const program = new Command();
 program
   .name('siko')
   .description('Runtime execution signal analyzer for JavaScript & TypeScript')
-  .version('0.2.1');
+  .version('0.3.1');
 
 /**
  * siko run <command>
@@ -37,7 +37,7 @@ program
   .argument('<command...>', 'Command to run (e.g., "npm test" or "node app.js")')
   .option('-c, --config <path>', 'Path to config file')
   .option('-v, --verbose', 'Show detailed instrumentation info')
-  .option('--no-clean', 'Don\'t clean previous execution data')
+  .option('--no-clean', "Don't clean previous execution data")
   .action(async (commandArgs: string[], options) => {
     try {
       // Load config
@@ -47,7 +47,7 @@ program
       const exitCode = await runWithInstrumentation(commandArgs, {
         verbose: options.verbose,
         clean: options.clean,
-        config
+        config,
       });
 
       process.exit(exitCode);
@@ -71,7 +71,8 @@ program
   .option('-f, --format <format>', 'Output format: terminal, json, or both', 'terminal')
   .option('-o, --output <path>', 'Output file for JSON format')
   .option('--fail-on-threshold', 'Exit with error code if thresholds not met')
-  .action((options) => {
+  .option('--no-source-maps', 'Disable source map resolution')
+  .action(async (options) => {
     try {
       // Load config
       const config = loadConfig(options.config);
@@ -96,20 +97,17 @@ program
       }
 
       // Read data files
-      const inventory: StaticInventory = JSON.parse(
-        fs.readFileSync(inventoryPath, 'utf8')
-      );
-      const execution: ExecutionData = JSON.parse(
-        fs.readFileSync(executionPath, 'utf8')
-      );
+      const inventory: StaticInventory = JSON.parse(fs.readFileSync(inventoryPath, 'utf8'));
+      const execution: ExecutionData = JSON.parse(fs.readFileSync(executionPath, 'utf8'));
 
       // Determine format from config or options
       const format = options.format || config.report?.format || 'terminal';
       const verbose = options.verbose ?? config.report?.verbose ?? false;
       const showAll = options.all ?? config.report?.showAll ?? false;
+      const useSourceMaps = options.sourceMaps && config.sourceMaps?.enabled !== false;
 
-      // Generate JSON report (used for thresholds and JSON output)
-      const jsonReport = generateJsonReport(inventory, execution);
+      // Generate JSON report with source maps (async)
+      const jsonReport = await generateJsonReport(inventory, execution, useSourceMaps);
 
       // Output based on format
       if (format === 'json') {
@@ -120,16 +118,24 @@ program
           printJsonReport(jsonReport);
         }
       } else if (format === 'both') {
-        // Terminal output
-        generateReport(inventory, execution, { verbose, showAll });
-        
+        // Terminal output (async for source maps)
+        await generateReport(inventory, execution, {
+          verbose,
+          showAll,
+          useSourceMaps,
+        });
+
         // JSON output
         const jsonPath = options.output || 'siko-report.json';
         writeJsonReport(jsonReport, jsonPath);
         console.log(chalk.gray(`\n📄 JSON report: ${jsonPath}`));
       } else {
-        // Terminal only (default)
-        generateReport(inventory, execution, { verbose, showAll });
+        // Terminal only (default) - async for source maps
+        await generateReport(inventory, execution, {
+          verbose,
+          showAll,
+          useSourceMaps,
+        });
       }
 
       // Check thresholds
@@ -141,7 +147,6 @@ program
           process.exit(1);
         }
       }
-
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error(chalk.red('❌ Failed to generate report:'), message);
@@ -166,9 +171,7 @@ program
       process.exit(1);
     }
 
-    const configContent = format === 'js' 
-      ? generateJsConfig()
-      : generateJsonConfig();
+    const configContent = format === 'js' ? generateJsConfig() : generateJsonConfig();
 
     fs.writeFileSync(filename, configContent);
     console.log(chalk.green(`✅ Created ${filename}`));
@@ -186,13 +189,13 @@ program
   .action((options) => {
     try {
       const config = loadConfig(options.config);
-      
+
       const files = [
         config.output?.inventory || '.siko-signal.inventory.json',
         config.output?.execution || '.siko-signal.exec.json',
-        'siko-report.json'
+        'siko-report.json',
       ];
-      
+
       let cleaned = 0;
 
       for (const file of files) {
@@ -249,6 +252,11 @@ function generateJsConfig(): string {
     execution: '.siko-signal.exec.json'
   },
 
+  // Source map configuration
+  sourceMaps: {
+    enabled: true
+  },
+
   // Threshold configuration for CI
   thresholds: {
     // Minimum coverage percentage (0-100)
@@ -271,29 +279,31 @@ function generateJsConfig(): string {
  * Generate JSON config template
  */
 function generateJsonConfig(): string {
-  return JSON.stringify({
-    include: ['src', 'lib', 'app'],
-    exclude: [
-      'node_modules',
-      'dist',
-      'build',
-      'coverage',
-      '*.test.js',
-      '*.spec.js'
-    ],
-    extensions: ['.js', '.jsx', '.ts', '.tsx'],
-    output: {
-      inventory: '.siko-signal.inventory.json',
-      execution: '.siko-signal.exec.json'
-    },
-    thresholds: {
-      coverage: 80,
-      maxUnused: 10
-    },
-    report: {
-      format: 'terminal',
-      verbose: false,
-      showAll: false
-    }
-  }, null, 2) + '\n';
+  return (
+    JSON.stringify(
+      {
+        include: ['src', 'lib', 'app'],
+        exclude: ['node_modules', 'dist', 'build', 'coverage', '*.test.js', '*.spec.js'],
+        extensions: ['.js', '.jsx', '.ts', '.tsx'],
+        output: {
+          inventory: '.siko-signal.inventory.json',
+          execution: '.siko-signal.exec.json',
+        },
+        sourceMaps: {
+          enabled: true,
+        },
+        thresholds: {
+          coverage: 80,
+          maxUnused: 10,
+        },
+        report: {
+          format: 'terminal',
+          verbose: false,
+          showAll: false,
+        },
+      },
+      null,
+      2
+    ) + '\n'
+  );
 }

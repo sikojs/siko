@@ -13,12 +13,7 @@ interface PluginState {
 /**
  * Generate a unique function ID
  */
-function generateFunctionId(
-  name: string,
-  file: string,
-  line: number,
-  column: number
-): string {
+function generateFunctionId(name: string, file: string, line: number, column: number): string {
   return `${name}:${file}:${line}:${column}`;
 }
 
@@ -85,7 +80,7 @@ function getFunctionType(path: NodePath): 'function' | 'method' | 'arrow' {
  */
 function shouldSkipFunction(path: NodePath): boolean {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const node: any = path.node;
+  const node: any = path.node;
   const name = getFunctionName(path);
 
   // Skip anonymous functions (v1 limitation)
@@ -118,18 +113,13 @@ function hasTrackingImport(path: NodePath<t.Program>): boolean {
 
   for (const statement of path.node.body) {
     // Check for: const { __siko_track } = require(...)
-    if (
-      t.isVariableDeclaration(statement) &&
-      statement.declarations.length > 0
-    ) {
+    if (t.isVariableDeclaration(statement) && statement.declarations.length > 0) {
       const declarator = statement.declarations[0];
       if (
         t.isObjectPattern(declarator.id) &&
         declarator.id.properties.some(
           (prop) =>
-            t.isObjectProperty(prop) &&
-            t.isIdentifier(prop.key) &&
-            prop.key.name === '__siko_track'
+            t.isObjectProperty(prop) && t.isIdentifier(prop.key) && prop.key.name === '__siko_track'
         )
       ) {
         hasImport = true;
@@ -166,17 +156,10 @@ function injectTrackingImport(path: NodePath<t.Program>): void {
   const requireStatement = t.variableDeclaration('const', [
     t.variableDeclarator(
       t.objectPattern([
-        t.objectProperty(
-          t.identifier('__siko_track'),
-          t.identifier('__siko_track'),
-          false,
-          true
-        )
+        t.objectProperty(t.identifier('__siko_track'), t.identifier('__siko_track'), false, true),
       ]),
-      t.callExpression(t.identifier('require'), [
-        t.stringLiteral(packagePath)
-      ])
-    )
+      t.callExpression(t.identifier('require'), [t.stringLiteral(packagePath)])
+    ),
   ]);
 
   // Insert at the beginning of the file
@@ -203,7 +186,7 @@ export default function sikoInstrumentationPlugin(): PluginObj<PluginState> {
           if (!hasTrackingImport(path)) {
             injectTrackingImport(path);
           }
-        }
+        },
       },
 
       // Instrument function declarations: function foo() {}
@@ -224,15 +207,12 @@ export default function sikoInstrumentationPlugin(): PluginObj<PluginState> {
           file: filename,
           line: loc.line,
           column: loc.column,
-          type: getFunctionType(path)
+          type: getFunctionType(path),
         });
 
         // Inject tracking call at the beginning
         const trackingCall = t.expressionStatement(
-          t.callExpression(
-            t.identifier('__siko_track'),
-            [t.stringLiteral(functionId)]
-          )
+          t.callExpression(t.identifier('__siko_track'), [t.stringLiteral(functionId)])
         );
 
         // Insert at the beginning of function body
@@ -258,14 +238,11 @@ export default function sikoInstrumentationPlugin(): PluginObj<PluginState> {
           file: filename,
           line: loc.line,
           column: loc.column,
-          type: getFunctionType(path)
+          type: getFunctionType(path),
         });
 
         const trackingCall = t.expressionStatement(
-          t.callExpression(
-            t.identifier('__siko_track'),
-            [t.stringLiteral(functionId)]
-          )
+          t.callExpression(t.identifier('__siko_track'), [t.stringLiteral(functionId)])
         );
 
         if (t.isBlockStatement(node.body)) {
@@ -290,7 +267,7 @@ export default function sikoInstrumentationPlugin(): PluginObj<PluginState> {
           file: filename,
           line: loc.line,
           column: loc.column,
-          type: getFunctionType(path)
+          type: getFunctionType(path),
         });
 
         // Arrow functions might have expression body, convert to block if needed
@@ -300,10 +277,7 @@ export default function sikoInstrumentationPlugin(): PluginObj<PluginState> {
         }
 
         const trackingCall = t.expressionStatement(
-          t.callExpression(
-            t.identifier('__siko_track'),
-            [t.stringLiteral(functionId)]
-          )
+          t.callExpression(t.identifier('__siko_track'), [t.stringLiteral(functionId)])
         );
 
         if (t.isBlockStatement(node.body)) {
@@ -328,14 +302,11 @@ export default function sikoInstrumentationPlugin(): PluginObj<PluginState> {
           file: filename,
           line: loc.line,
           column: loc.column,
-          type: getFunctionType(path)
+          type: getFunctionType(path),
         });
 
         const trackingCall = t.expressionStatement(
-          t.callExpression(
-            t.identifier('__siko_track'),
-            [t.stringLiteral(functionId)]
-          )
+          t.callExpression(t.identifier('__siko_track'), [t.stringLiteral(functionId)])
         );
 
         if (t.isBlockStatement(node.body)) {
@@ -360,20 +331,17 @@ export default function sikoInstrumentationPlugin(): PluginObj<PluginState> {
           file: filename,
           line: loc.line,
           column: loc.column,
-          type: getFunctionType(path)
+          type: getFunctionType(path),
         });
 
         const trackingCall = t.expressionStatement(
-          t.callExpression(
-            t.identifier('__siko_track'),
-            [t.stringLiteral(functionId)]
-          )
+          t.callExpression(t.identifier('__siko_track'), [t.stringLiteral(functionId)])
         );
 
         if (t.isBlockStatement(node.body)) {
           node.body.body.unshift(trackingCall);
         }
-      }
+      },
     },
 
     post() {
@@ -381,7 +349,11 @@ export default function sikoInstrumentationPlugin(): PluginObj<PluginState> {
       if (this.functions.length > 0) {
         const fs = require('fs');
 
-        let inventory: { functions: FunctionInfo[]; timestamp?: string; totalFunctions?: number } = { functions: [] };
+        let inventory: {
+          functions: FunctionInfo[];
+          timestamp?: string;
+          totalFunctions?: number;
+        } = { functions: [] };
         const inventoryPath = '.siko-signal.inventory.json';
 
         // Read existing inventory
@@ -407,6 +379,6 @@ export default function sikoInstrumentationPlugin(): PluginObj<PluginState> {
 
         fs.writeFileSync(inventoryPath, JSON.stringify(inventory, null, 2));
       }
-    }
+    },
   };
 }

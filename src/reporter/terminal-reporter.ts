@@ -4,20 +4,36 @@
 
 import chalk from 'chalk';
 import { ExecutionData, StaticInventory, FunctionInfo } from '../runtime/types';
+import { mapToOriginal } from '../utils/source-map';
 
 export interface ReportOptions {
   verbose?: boolean;
   showAll?: boolean;
+  useSourceMaps?: boolean;
+}
+
+/**
+ * Map function info to original source positions
+ */
+async function mapFunctionToOriginal(func: FunctionInfo): Promise<FunctionInfo> {
+  const mapped = await mapToOriginal(func.file, func.line, func.column);
+
+  return {
+    ...func,
+    file: mapped.source || func.file,
+    line: mapped.line,
+    column: mapped.column,
+  };
 }
 
 /**
  * Generate terminal report comparing inventory vs execution
  */
-export function generateReport(
+export async function generateReport(
   inventory: StaticInventory,
   execution: ExecutionData,
   options: ReportOptions = {}
-): void {
+): Promise<void> {
   console.log('\n' + chalk.bold.cyan('📊 siko Signal Analysis Report'));
   console.log(chalk.gray('─'.repeat(60)) + '\n');
 
@@ -25,30 +41,44 @@ export function generateReport(
   console.log(chalk.bold('Summary:'));
   console.log(`  Total functions found: ${chalk.cyan(inventory.totalFunctions)}`);
   console.log(`  Functions executed: ${chalk.green(execution.totalFunctions)}`);
-  
+
   const unusedCount = inventory.totalFunctions - execution.totalFunctions;
-  const coveragePercent = inventory.totalFunctions > 0
-    ? ((execution.totalFunctions / inventory.totalFunctions) * 100).toFixed(1)
-    : '0';
-  
+  const coveragePercent =
+    inventory.totalFunctions > 0
+      ? ((execution.totalFunctions / inventory.totalFunctions) * 100).toFixed(1)
+      : '0';
+
   console.log(`  Functions not executed: ${chalk.red(unusedCount)}`);
   console.log(`  Execution coverage: ${chalk.yellow(coveragePercent + '%')}\n`);
 
   // Find unused functions
   const executedIds = new Set(Object.keys(execution.executions));
-  const unusedFunctions = inventory.functions.filter(f => !executedIds.has(f.id));
-  const usedFunctions = inventory.functions.filter(f => executedIds.has(f.id));
+  let unusedFunctions = inventory.functions.filter((f) => !executedIds.has(f.id));
+  let usedFunctions = inventory.functions.filter((f) => executedIds.has(f.id));
+
+  // Map to original positions if source maps enabled
+  if (options.useSourceMaps !== false) {
+    try {
+      unusedFunctions = await Promise.all(unusedFunctions.map((f) => mapFunctionToOriginal(f)));
+      usedFunctions = await Promise.all(usedFunctions.map((f) => mapFunctionToOriginal(f)));
+    } catch {
+      // If source map fails, continue with instrumented positions
+      console.log(
+        chalk.dim('Note: Source map resolution failed, showing instrumented positions\n')
+      );
+    }
+  }
 
   // Show unused functions
   if (unusedFunctions.length > 0) {
     console.log(chalk.bold.red('❌ Unused Functions:'));
-    
+
     // Group by file
     const byFile = groupByFile(unusedFunctions);
-    
+
     for (const [file, functions] of Object.entries(byFile)) {
       console.log(chalk.gray(`\n  ${file}:`));
-      functions.forEach(func => {
+      functions.forEach((func) => {
         console.log(`    ${chalk.red('●')} ${func.name} ${chalk.gray(`(line ${func.line})`)}`);
       });
     }
@@ -60,12 +90,12 @@ export function generateReport(
   // Show used functions if verbose
   if (options.verbose && usedFunctions.length > 0) {
     console.log(chalk.bold.green('✅ Executed Functions:'));
-    
+
     const byFile = groupByFile(usedFunctions);
-    
+
     for (const [file, functions] of Object.entries(byFile)) {
       console.log(chalk.gray(`\n  ${file}:`));
-      functions.forEach(func => {
+      functions.forEach((func) => {
         const count = execution.executions[func.id] || 0;
         console.log(`    ${chalk.green('●')} ${func.name} ${chalk.gray(`(${count}x)`)}`);
       });
@@ -77,18 +107,18 @@ export function generateReport(
   if (options.showAll) {
     console.log(chalk.bold('Execution Statistics:'));
     console.log(`  Total executions: ${chalk.cyan(execution.totalExecutions)}`);
-    
+
     // Find most called function
     let maxCalls = 0;
     let maxFunction = '';
-    
+
     for (const [id, count] of Object.entries(execution.executions)) {
       if (count > maxCalls) {
         maxCalls = count;
         maxFunction = id.split(':')[0];
       }
     }
-    
+
     if (maxFunction) {
       console.log(`  Most called: ${chalk.cyan(maxFunction)} ${chalk.gray(`(${maxCalls}x)`)}`);
     }
@@ -104,33 +134,34 @@ export function generateReport(
  */
 function groupByFile(functions: FunctionInfo[]): Record<string, FunctionInfo[]> {
   const grouped: Record<string, FunctionInfo[]> = {};
-  
+
   for (const func of functions) {
     if (!grouped[func.file]) {
       grouped[func.file] = [];
     }
     grouped[func.file].push(func);
   }
-  
+
   // Sort functions within each file by line number
   for (const file in grouped) {
     grouped[file].sort((a, b) => a.line - b.line);
   }
-  
+
   return grouped;
 }
 
 /**
  * Simple summary without full report
  */
-export function printSummary(
+export async function printSummary(
   inventory: StaticInventory,
   execution: ExecutionData
-): void {
+): Promise<void> {
   const unusedCount = inventory.totalFunctions - execution.totalFunctions;
-  const coveragePercent = inventory.totalFunctions > 0
-    ? ((execution.totalFunctions / inventory.totalFunctions) * 100).toFixed(1)
-    : '0';
+  const coveragePercent =
+    inventory.totalFunctions > 0
+      ? ((execution.totalFunctions / inventory.totalFunctions) * 100).toFixed(1)
+      : '0';
 
   console.log(chalk.bold('\n📊 Quick Summary:'));
   console.log(`  ${chalk.cyan(inventory.totalFunctions)} functions found`);
