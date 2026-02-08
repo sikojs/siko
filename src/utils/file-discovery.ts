@@ -5,6 +5,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { minimatch } from 'minimatch';
 
 export interface FileDiscoveryOptions {
   extensions?: string[];
@@ -25,13 +26,19 @@ const DEFAULT_EXCLUDE = [
 ];
 
 /**
- * Check if a path should be excluded
+ * Check if a path should be excluded using glob patterns
  */
 function shouldExclude(filePath: string, excludePatterns: string[]): boolean {
   const normalizedPath = filePath.replace(/\\/g, '/');
   
   return excludePatterns.some(pattern => {
-    // Direct match
+    // Try glob matching first
+    if (pattern.includes('*') || pattern.includes('?')) {
+      // It's a glob pattern
+      return minimatch(normalizedPath, pattern, { dot: true });
+    }
+    
+    // Direct string match for literal paths
     if (normalizedPath.includes(pattern)) {
       return true;
     }
