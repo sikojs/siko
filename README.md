@@ -778,7 +778,7 @@ Or exclude specific JSX directories:
 }
 ```
 
-**Status**: Full JSX/TSX support is in active development for **v0.4.0**
+**Status**: Full JSX/TSX support is in active development for **v0.5.0**
 
 **Current Best Use Cases** (v0.3.0):
 
@@ -792,7 +792,7 @@ Or exclude specific JSX directories:
 
 Glob patterns in `exclude` (like `*.test.js`) may require full paths. Use `extensions` filter for broader exclusions.
 
-**Improvement planned for v0.4.0**
+**Improvement planned for v0.5.0**
 
 **Made with ❤️ by [Mayukh Sinha](https://github.com/neu-msinha)**
 
