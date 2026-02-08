@@ -1,3 +1,19 @@
+## [0.4.2] - 2026-02-08
+
+### Changed
+- **Repository renamed** from `sikojs/signal` to `sikojs/siko` for better brand alignment
+- Updated all documentation links to reflect new repository name
+- Package name and repository name now match
+
+### Fixed
+- Configuration options now properly applied to file discovery
+- Extensions filter correctly excludes .tsx/.jsx files
+- Exclude patterns properly respected during instrumentation
+
+All existing GitHub links automatically redirect to new repository URL.
+
+---
+
 ## [0.4.1] - 2026-02-08
 
 ### Fixed
