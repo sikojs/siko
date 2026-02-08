@@ -8,7 +8,7 @@ import * as path from 'path';
 import chalk from 'chalk';
 import * as babel from '@babel/core';
 import sikoInstrumentationPlugin from '../instrumentation/babel-plugin';
-import { SikoConfig } from '../config/types';
+import { DEFAULT_CONFIG, SikoConfig } from '../config/types';
 
 export interface RunOptions {
   clean?: boolean;
@@ -72,6 +72,8 @@ export async function runWithInstrumentation(
 ): Promise<number> {
   console.log(chalk.cyan('🔧 siko: Instrumenting code...\n'));
 
+  const config = options.config || DEFAULT_CONFIG;
+
   // Clean previous run data
   if (options.clean !== false) {
     cleanPreviousData();
@@ -79,7 +81,11 @@ export async function runWithInstrumentation(
 
   // Find files to instrument
   const { findProjectFiles } = require('../utils');
-  const files = findProjectFiles();
+  const files = findProjectFiles({
+    includeDirs: config.include,
+    exclude: config.exclude,
+    extensions: config.extensions,
+  });
 
   if (files.length === 0) {
     console.log(chalk.yellow('⚠️  No JavaScript/TypeScript files found to instrument'));

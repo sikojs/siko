@@ -93,11 +93,28 @@
 
 ### Planned
 
-- HTML report generation
-- Watch mode
-- Historical trend analysis
-- Integration with popular test frameworks
+#### v0.5.0
+- **Full JSX/TSX support** - Currently requires exclusion workaround, working on native React/JSX instrumentation
+- HTML report generation with interactive UI
+- Performance optimizations (parallel processing, caching)
+
+#### v0.6.0+
+- Watch mode for continuous analysis
+- Historical trend analysis and comparison
+- Integration with popular test frameworks (Jest plugins, Vitest integration)
 - Browser environment support
-- Code coverage integration
-- IDE extensions
-- Performance optimizations
+- Code coverage integration (merge with Istanbul/nyc)
+- IDE extensions (VSCode, WebStorm)
+
+#### Known Limitations
+
+**JSX/TSX Support (v0.4.x)**
+- Limited JSX/TSX support due to Babel transformation issues
+- **Workaround**: Exclude .tsx/.jsx files in config:
+```json
+  {
+    "extensions": [".js", ".ts"],
+    "exclude": ["**/*.tsx", "**/*.jsx", "src/components/**"]
+  }
+```
+- **Target**: Full React/JSX support in v0.5.0
