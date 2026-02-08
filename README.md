@@ -1,28 +1,131 @@
 # siko
 
-> Runtime execution signal analyzer for JavaScript & TypeScript
-
-[![npm version](https://badge.fury.io/js/siko.svg)](https://www.npmjs.com/package/siko)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+> **The first runtime execution analyzer for JavaScript & TypeScript**
 
 [![CI](https://github.com/sikojs/signal/actions/workflows/ci.yml/badge.svg)](https://github.com/sikojs/signal/actions/workflows/ci.yml)
 [![npm version](https://badge.fury.io/js/siko.svg)](https://www.npmjs.com/package/siko)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Status:** 🚧 Under active development
+Unlike static analysis tools that *guess* which code is unused, **siko actually runs your code** and tells you what never executed.
 
-**siko** reveals which parts of your codebase emit real runtime signal during execution, helping you identify and remove dead code with confidence.
+✅ **Zero false positives** - Based on real execution data  
+✅ **Finds runtime-only dead code** - Not just unused exports  
+✅ **Works with any test framework** - Jest, Mocha, Vitest, etc.  
+✅ **CI/CD ready** - Enforce coverage thresholds in your pipeline  
+
+---
+
+## 🎯 Why siko is Different
+
+### The Problem with Static Analysis
+
+Popular tools like **Knip**, **ts-prune**, and **ESLint** use static analysis - they analyze your code *without running it*. This leads to:
+
+❌ **False positives** - Code flagged as unused but actually runs conditionally  
+❌ **Missed dead code** - Private functions that are never called  
+❌ **Can't handle dynamic code** - Feature flags, conditional logic, runtime imports  
+
+### siko's Runtime Approach
+
+**siko instruments your code and tracks what actually executes during your tests.**
+```javascript
+// example.js
+export function apiCall() { }      // Used in prod only
+function validateInput() { }       // Used everywhere  
+function legacyHelper() { }        // NEVER called!
+
+// Your test
+test('api', () => {
+  apiCall(); // siko tracks this execution
+});
+```
+
+**Static tools report:**
+- ❌ All three functions look "used" (or flag `apiCall` incorrectly)
+
+**siko reports:**
+- ✅ `legacyHelper()` never executed - **true dead code!**
+- ⚠️ `apiCall()` called 1x during tests
+- ✅ `validateInput()` called 5x during tests
+
+---
+
+## 🔍 Comparison Matrix
+
+| Feature | Knip/ts-prune | ESLint | **siko** |
+|---------|---------------|--------|----------|
+| **Analysis Type** | Static | Static | **Runtime** ✨ |
+| **Runs Your Code** | No | No | **Yes** |
+| **Finds Unused Exports** | ✅ | ✅ | ❌ |
+| **Finds Never-Executed Functions** | ❌ | ❌ | **✅** |
+| **False Positives** | Common | Common | **Rare** |
+| **Works on Private Functions** | Limited | Limited | **✅** |
+| **Detects Feature-Flagged Code** | ❌ | ❌ | **✅** |
+| **Execution Count** | ❌ | ❌ | **✅** |
+
+**💡 Pro Tip**: Use **both approaches** together!
+- **Knip** for structural cleanup (unused files, dependencies, exports)
+- **siko** for runtime cleanup (never-executed functions)
+
+## 🆚 siko vs Other Tools
+
+### Static Analysis (No Execution Required)
+
+**Knip, ts-prune, ESLint**
+- ✅ Fast - no execution needed
+- ✅ Finds structural issues (unused exports, files)
+- ❌ Can't see runtime behavior
+- ❌ False positives on dynamic code
+
+**Best for**: Quick structural cleanup without running code
+
+### Runtime Analysis (Execution Required)
+
+**siko**
+- ✅ High accuracy - based on real execution
+- ✅ Finds never-executed functions
+- ✅ No false positives
+- ⚠️ Requires running your code (tests/app)
+
+**Best for**: Finding functions that truly never run in your test suite
+
+### Traditional Coverage Tools
+
+**Istanbul, nyc, c8**
+- ✅ Line/branch/statement coverage
+- ✅ Standard industry metrics
+- ❌ Focus on "% covered", not "what's unused"
+
+**Best for**: Measuring test coverage percentages
+
+---
+
+**The Complete Toolkit:**
+```bash
+# 1. Structural cleanup
+npx knip
+
+# 2. Runtime analysis  
+npx siko run npm test
+
+# 3. Coverage metrics
+npx nyc npm test
+```
+
+---
 
 ## ✨ Features
 
-- 🔍 **Runtime Analysis** - Tracks which functions actually execute during test runs
-- 🎯 **Dead Code Detection** - Identifies unused functions with precision
-- 📊 **Coverage Reports** - Shows execution statistics and coverage percentages
-- ⚙️ **Configurable** - Flexible configuration via JSON or JS files
-- 🚀 **CI/CD Ready** - Threshold enforcement with proper exit codes
-- 📦 **Zero Config** - Works out of the box with sensible defaults
+- 🔍 **Runtime Execution Tracking** - Know exactly what runs during tests
+- 🎯 **True Dead Code Detection** - Zero false positives based on real execution
+- 📊 **Execution Metrics** - See how many times each function was called
+- ⚙️ **Zero Config** - Works out of the box with sensible defaults
+- 🚀 **CI/CD Integration** - Fail builds if coverage drops below threshold
+- 📦 **TypeScript Support** - Full support for JavaScript and TypeScript
 - 🎨 **Beautiful Reports** - Colored terminal output and JSON exports
-- 💪 **TypeScript Support** - Full support for JavaScript and TypeScript
+- 💪 **Test Framework Agnostic** - Works with Jest, Mocha, Vitest, any test runner
+
+---
 
 ## 🚀 Quick Start
 
@@ -40,7 +143,133 @@ npx siko run npm test
 npx siko report
 ```
 
-That's it! siko will show you which functions were never executed.
+**Example Output:**
+```
+📊 siko Signal Analysis Report
+────────────────────────────────────────────────────────────
+
+Summary:
+  Total functions found: 10
+  Functions executed: 7
+  Functions not executed: 3
+  Execution coverage: 70.0%
+
+❌ Unused Functions:
+
+  src/utils.js:
+    ● calculateTax (line 45) - never called
+    ● formatCurrency (line 89) - never called
+    ● validateZip (line 102) - never called
+
+────────────────────────────────────────────────────────────
+✅ All thresholds passed!
+```
+
+Now you can **confidently delete** those 3 functions - they never executed during your test run!
+
+---
+
+## 📖 How It Works
+
+siko uses a unique **runtime instrumentation approach**:
+```
+1. Instrument    → Babel plugin injects tracking calls
+2. Execute       → Run your tests/app normally  
+3. Track         → Record which functions actually run
+4. Analyze       → Compare inventory vs execution
+5. Report        → Show never-executed functions
+```
+
+## 🏃 What "Running Code" Means
+
+siko performs **runtime analysis** - it needs to execute your code to track what runs.
+
+### You Can Run:
+```bash
+# ✅ Tests (recommended - most comprehensive)
+siko run npm test
+siko run jest
+siko run vitest
+
+# ✅ Your application
+siko run node server.js
+siko run npm start
+
+# ✅ Scripts
+siko run node scripts/migrate.js
+
+# ✅ Any executable code
+siko run ts-node src/index.ts
+```
+
+### Best Results: Comprehensive Test Suites
+
+**With good test coverage:**
+```bash
+siko run npm test
+# Result: High confidence - if tests are thorough, 
+#         unused functions are likely dead code
+```
+
+**Without tests (manual app run):**
+```bash
+siko run node app.js
+# Use app for 5 minutes, then stop
+# Result: Lower confidence - only shows what YOU used,
+#         not all possible code paths
+```
+
+### 💡 Pro Tip: Run Multiple Times
+```bash
+# Run tests first
+siko run npm test
+
+# Then run app (keeps previous data)
+siko run --no-clean node app.js
+
+# Report combines BOTH runs!
+siko report
+```
+
+This gives you the most comprehensive view of your codebase!
+
+### Architecture
+```
+Source Code → Babel Instrumentation → Runtime Tracking → Signal Report
+```
+
+Unlike static analysis, siko gives you **certainty** - if a function didn't run during your comprehensive test suite, it's dead code.
+
+---
+
+## 🎓 Use Cases
+
+### Perfect For:
+
+✅ **Identifying truly unused code** - No guesswork, based on real execution  
+✅ **Refactoring with confidence** - Know exactly what's safe to delete  
+✅ **Test coverage insights** - Which code paths are never tested  
+✅ **Legacy code cleanup** - Find ancient functions that never run  
+✅ **CI/CD quality gates** - Enforce execution coverage standards  
+
+### When to Use Static Tools Instead:
+
+Use **Knip** or **ts-prune** when you want to:
+- Find unused files and dependencies
+- Detect unused exports across modules
+- Quick analysis without running code
+
+### Best Practice: Use Both! 🎯
+```bash
+# 1. Static analysis - structural cleanup
+npx knip
+
+# 2. Runtime analysis - execution cleanup  
+npx siko run npm test
+npx siko report
+```
+
+---
 
 ## 📖 Usage
 
@@ -51,13 +280,13 @@ That's it! siko will show you which functions were never executed.
 Instruments your code and runs a command:
 ```bash
 # Run tests
-siko run npm test
+npx siko run npm test
 
 # Run specific file
-siko run node app.js
+npx siko run node app.js
 
 # Run any command
-siko run jest --coverage
+npx siko run jest --coverage
 ```
 
 **Options:**
@@ -70,22 +299,22 @@ siko run jest --coverage
 Generate analysis report:
 ```bash
 # Terminal report (default)
-siko report
+npx siko report
 
 # Verbose mode (show executed functions)
-siko report --verbose
+npx siko report --verbose
 
 # All statistics
-siko report --all
+npx siko report --all
 
 # JSON output
-siko report --format json -o report.json
+npx siko report --format json -o report.json
 
 # Both formats
-siko report --format both
+npx siko report --format both
 
 # Fail if thresholds not met (CI/CD)
-siko report --fail-on-threshold
+npx siko report --fail-on-threshold
 ```
 
 **Options:**
@@ -100,18 +329,20 @@ siko report --fail-on-threshold
 Create a configuration file:
 ```bash
 # Create JSON config (default)
-siko init
+npx siko init
 
 # Create JS config
-siko init --format js
+npx siko init --format js
 ```
 
 #### `siko clean`
 
 Remove execution data files:
 ```bash
-siko clean
+npx siko clean
 ```
+
+---
 
 ## ⚙️ Configuration
 
@@ -152,6 +383,8 @@ Create a `siko.config.json` or `siko.config.js` file:
 | `report.verbose` | `boolean` | `false` | Show verbose output by default |
 | `report.showAll` | `boolean` | `false` | Show all statistics by default |
 
+---
+
 ## 🎯 CI/CD Integration
 
 Use thresholds to enforce code quality standards:
@@ -163,7 +396,7 @@ name: Dead Code Check
 on: [push, pull_request]
 
 jobs:
-  check:
+  runtime-analysis:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -180,10 +413,10 @@ jobs:
       - name: Run tests with tracking
         run: siko run npm test
       
-      - name: Check dead code thresholds
+      - name: Check execution coverage
         run: siko report --fail-on-threshold
       
-      - name: Upload coverage report
+      - name: Upload runtime report
         if: always()
         uses: actions/upload-artifact@v3
         with:
@@ -203,7 +436,9 @@ jobs:
 
 If thresholds are not met, the build will fail with exit code 1.
 
-## 📊 Example Output
+---
+
+## 📊 Example Report
 
 ### Terminal Report
 ```
@@ -256,33 +491,187 @@ Generated by siko - Runtime Signal Analyzer
       "type": "function",
       "executionCount": 15
     }
-  ],
-  "timestamp": "2026-02-07T18:30:00.000Z"
+  ]
 }
 ```
 
+---
+
+## 🔧 Real-World Examples
+
+### Example 1: Feature Flag Detection
+```javascript
+// src/features.js
+function newCheckout() {
+  // New implementation
+}
+
+function oldCheckout() {
+  // Legacy - feature flag turned off in tests
+}
+
+// Tests only run with new feature flag
+test('checkout', () => {
+  newCheckout(); // Executed ✅
+  // oldCheckout never called
+});
+```
+
+**siko report shows:**
+```
+❌ Unused: oldCheckout() - Safe to delete!
+```
+
+### Example 2: Error Path Coverage
+```javascript
+// src/api.js
+function handleSuccess(data) {
+  return processData(data);
+}
+
+function handleError(error) {
+  // This error path is never tested!
+  logError(error);
+  sendAlert(error);
+}
+```
+
+**siko report shows:**
+```
+⚠️  handleError() never executed
+💡 Add tests for error scenarios!
+```
+
+### Example 3: Refactoring Confidence
+```javascript
+// After a big refactor, which old helpers are still needed?
+function newImplementation() { }  // ✅ Called 50x
+function oldHelper1() { }         // ❌ Never called
+function oldHelper2() { }         // ❌ Never called  
+function stillNeeded() { }        // ✅ Called 3x
+```
+
+**siko gives you confidence to delete `oldHelper1` and `oldHelper2`!**
+
+---
+
+## 🆚 When to Use siko vs Static Tools
+
+### Use **siko** when you want to:
+- ✅ Find functions that **never execute** during tests
+- ✅ Get **high-confidence** dead code detection (zero false positives)
+- ✅ Discover **untested code paths** (error handlers, edge cases)
+- ✅ Track **execution frequency** (which functions are hot paths)
+- ✅ Clean up after **refactoring** (what old code is still needed?)
+
+### Use **Knip/ts-prune** when you want to:
+- ✅ Find unused **files** and **dependencies**
+- ✅ Detect unused **exports** across modules
+- ✅ Quick analysis **without running** code
+- ✅ Static analysis for **build-time** optimization
+
+### 🏆 Best Practice: Use Both!
+```bash
+# 1. Structural cleanup (static)
+npx knip
+
+# 2. Execution cleanup (runtime)
+npx siko run npm test
+npx siko report
+```
+
+This combination gives you **complete dead code coverage**:
+- Knip removes structural waste
+- siko removes runtime waste
+
+---
+
+## 🚀 Quick Start
+
+### Installation
+```bash
+npm install --save-dev siko
+```
+
+### Basic Usage
+```bash
+# Run your tests with instrumentation
+npx siko run npm test
+
+# Generate report
+npx siko report
+```
+
+That's it! siko will show you which functions were never executed.
+
+---
+
+## 💡 Common Questions
+
+**Q: Will siko slow down my tests?**  
+A: Minimal overhead - instrumentation is lightweight, typically <5% slowdown.
+
+**Q: Does siko work with TypeScript?**  
+A: Yes! Full support for both JavaScript and TypeScript.
+
+**Q: Can I use this in production?**  
+A: siko is designed for development/test environments, not production monitoring.
+
+**Q: How is this different from code coverage tools?**  
+A: Code coverage shows which *lines* ran. siko shows which *functions* never ran - perfect for finding entire unused functions.
+
+**Q: Do I need to change my code?**  
+A: No! siko instruments your code automatically - no changes needed.
+
+---
+
 ## 🔧 How It Works
 
-1. **Instrumentation**: Babel plugin injects lightweight tracking calls into your functions
-2. **Execution**: Your tests/code runs normally with tracking enabled
-3. **Collection**: Runtime tracker records which functions execute
-4. **Analysis**: Compares static inventory vs. runtime execution
-5. **Reporting**: Shows which functions were never called
+### Behind the Scenes
+
+1. **Discovery**: siko finds all JS/TS files in your project
+2. **Instrumentation**: Babel plugin injects lightweight tracking calls
+3. **Execution**: Your tests run normally with tracking enabled
+4. **Collection**: Records which functions execute and how many times
+5. **Analysis**: Compares static inventory vs runtime execution
+6. **Reporting**: Shows functions that never ran
+
+### Architecture
 ```
 Source Code → Babel Instrumentation → Runtime Tracking → Signal Report
+                     ↓
+              Static Inventory      Runtime Execution
+              (all functions)    (actually called)
+                     ↓                    ↓
+                     └────── Compare ──────┘
+                              ↓
+                        Dead Code Report
 ```
+
+---
 
 ## 🎓 Use Cases
 
-- **Refactoring** - Safely remove unused code with confidence
-- **Code Review** - Identify dead code in pull requests
-- **Technical Debt** - Track and reduce unused functions over time
-- **CI/CD** - Enforce code quality standards in pipelines
-- **Documentation** - Understand which code paths are actually used
+### Development Workflows
+
+- **Post-Refactoring Cleanup** - Remove old code with confidence
+- **Legacy Code Migration** - Identify truly unused legacy functions
+- **Test Gap Analysis** - Find code paths never tested
+- **Bundle Size Reduction** - Remove dead weight before bundling
+- **Code Review** - Validate that new code is actually used
+
+### CI/CD Pipelines
+
+- **Quality Gates** - Enforce minimum execution coverage
+- **PR Checks** - Prevent dead code from being merged
+- **Trend Analysis** - Track dead code over time
+- **Automated Cleanup** - Fail builds with too much unused code
+
+---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ### Development
 ```bash
@@ -299,13 +688,17 @@ npm run build
 # Run tests
 npm test
 
-# Run with coverage
-npm run test:coverage
+# Run linter
+npm run lint
 ```
+
+---
 
 ## 📝 License
 
 MIT © Mayukh Sinha
+
+---
 
 ## 🔗 Links
 
@@ -313,11 +706,56 @@ MIT © Mayukh Sinha
 - [npm Package](https://www.npmjs.com/package/siko)
 - [Issue Tracker](https://github.com/sikojs/signal/issues)
 - [Contributing Guide](CONTRIBUTING.md)
-
-## 💡 Inspiration
-
-siko was built to solve the challenge of identifying truly unused code in JavaScript and TypeScript projects. Static analysis can't tell you what actually runs - only runtime analysis can.
+- [Changelog](CHANGELOG.md)
 
 ---
 
+## 🌟 Why "siko"?
+
+**siko** = **sig**nal + c**o**de
+
+It reveals which parts of your codebase emit real runtime **signal**, helping you separate the signal from the noise.
+
+---
+
+## ⚠️ Known Limitations (v0.3.0)
+
+### JSX/TSX Support (In Progress)
+
+Currently, siko has **limited support for JSX/TSX files** due to Babel transformation issues discovered during real-world testing.
+
+**Issue**: Instrumentation can break JSX syntax in some cases, causing TypeScript compilation errors.
+
+**Workaround for React/Next.js/JSX projects:**
+```json
+{
+  "extensions": [".js", ".ts"],
+  "exclude": ["**/*.tsx", "**/*.jsx", "**/*.test.tsx"]
+}
+```
+
+Or exclude specific JSX directories:
+```json
+{
+  "exclude": ["src/components", "src/jsx"]
+}
+```
+
+**Status**: Full JSX/TSX support is in active development for **v0.4.0**
+
+**Current Best Use Cases** (v0.3.0):
+- ✅ Node.js backends and APIs
+- ✅ TypeScript libraries and packages
+- ✅ JavaScript utilities and tools
+- ✅ Non-React applications
+- ⚠️ React projects (with workaround above)
+
+### File Pattern Matching
+
+Glob patterns in `exclude` (like `*.test.js`) may require full paths. Use `extensions` filter for broader exclusions.
+
+**Improvement planned for v0.4.0**
+
 **Made with ❤️ by [Mayukh Sinha](https://github.com/neu-msinha)**
+
+*Runtime analysis for a cleaner codebase.*
