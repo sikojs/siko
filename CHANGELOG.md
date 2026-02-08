@@ -1,9 +1,19 @@
-# Changelog
+## [0.3.1] - 2026-02-07
 
-All notable changes to this project will be documented in this file.
+### Fixed
+- Glob pattern support for exclude patterns (e.g., `**/*.test.ts`, `*.tsx`)
+- File exclusion now properly handles wildcard patterns
+- JSX/TSX files can now be excluded using glob patterns
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+### Added
+- minimatch library for robust glob pattern matching
+- Comprehensive file discovery tests (12 new tests)
+- Support for nested directory exclusions (e.g., `src/jsx/**`)
+
+### Improved
+- File discovery logic with proper glob matching
+- Documentation for exclude pattern usage
+- React/JSX project compatibility via proper exclusions
 
 ---
 
