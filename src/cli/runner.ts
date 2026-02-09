@@ -52,9 +52,10 @@ function instrumentFile(filePath: string): string {
   }
 
   // Handle path replacement for both ESM and CommonJS
+  // For ESM, use the .mjs wrapper to avoid CommonJS module issues
   const instrumented =
     moduleContext.moduleType === 'esm'
-      ? result.code.replace(/from ['"]siko\/dist\/runtime['"]/g, `from '${runtimePath}'`)
+      ? result.code.replace(/from ['"]siko\/dist\/runtime['"]/g, `from '${runtimePath}/index.mjs'`)
       : result.code.replace(/require\(['"]siko\/dist\/runtime['"]\)/g, `require('${runtimePath}')`);
 
   // Save source map alongside instrumented file

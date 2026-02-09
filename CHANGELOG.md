@@ -1,7 +1,23 @@
+## [0.4.6] - 2026-02-09
+
+### Fixed
+- **CRITICAL: ES Module Runtime Error** - Fixed "module is not defined" error in ESM projects
+  - Added `.mjs` wrapper for runtime to support ES module imports
+  - Runner now uses `index.mjs` for ESM projects, `index.js` for CommonJS
+  - Fixes compatibility with projects like Hono that use `"type": "module"`
+  - This was a critical bug in 0.4.5 that prevented ESM projects from running
+
+### Changed
+- Build script updated to automatically copy ESM runtime wrapper
+
+---
+
 ## [0.4.5] - 2026-02-09
 
+⚠️ **Note:** This version had a critical bug with ES module projects. Please upgrade to 0.4.6.
+
 ### Added
-- **Full ES Module Support**
+- **Full ES Module Support** (with bug - fixed in 0.4.6)
   - Automatic module type detection (ESM vs CommonJS)
   - Respects package.json "type" field
   - .mjs and .cjs extension handling
