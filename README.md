@@ -8,9 +8,11 @@
 
 Unlike static analysis tools that _guess_ which code is unused, **siko actually runs your code** and tells you what never executed.
 
-✅ Zero false positives — based on real execution data  
-✅ Finds runtime-only dead code — not just unused exports  
-✅ Works with any test framework — Jest, Mocha, Vitest, etc.  
+✅ Zero false positives — based on real execution data
+✅ Finds runtime-only dead code — not just unused exports
+✅ Works with any test framework — Jest, Mocha, Vitest, etc.
+✅ Full JSX/TSX support — React projects work seamlessly
+✅ ES Module support — auto-detects ESM vs CommonJS
 ✅ CI/CD ready — enforce coverage thresholds in your pipeline
 
 ---
@@ -300,20 +302,38 @@ Coverage tools show which _lines_ ran. siko shows which _functions_ never ran �
 
 ---
 
-## ⚠️ Known Limitations (v0.4.3)
+## ✨ Full JSX/TSX & ES Module Support
 
-**JSX/TSX Support** — Instrumentation can break JSX syntax in some cases. Workaround:
+**JSX/TSX Support** — siko fully supports React and JSX/TSX syntax. All JSX patterns are correctly instrumented, including:
+- ✅ Arrow functions with JSX
+- ✅ JSX fragments (`<>...</>`)
+- ✅ Conditional rendering
+- ✅ Higher-order components
+- ✅ TypeScript generics with JSX
+- ✅ Class components
 
-```json
-{
-  "extensions": [".js", ".ts"],
-  "exclude": ["**/*.tsx", "**/*.jsx"]
-}
-```
+**ES Module Support** — siko automatically detects and handles both CommonJS and ES modules:
+- `.mjs` files → ES module imports
+- `.cjs` files → CommonJS requires
+- `.js`, `.jsx`, `.ts`, `.tsx` → Detected from nearest `package.json` `"type"` field
+- Mixed projects supported seamlessly
 
-Full JSX/TSX support is in active development for **v0.5.0**. Current best fit: Node.js backends, TypeScript libraries, JS utilities, and non-React applications.
+### Module Type Detection
 
-**File Pattern Matching** — Glob patterns in `exclude` may require full paths. Use `extensions` for broader exclusions. Improvement planned for v0.5.0.
+siko automatically detects whether to use ES imports or CommonJS requires:
+
+1. **File extension:**
+   - `.mjs` → Always ESM
+   - `.cjs` → Always CommonJS
+   - `.js`, `.jsx`, `.ts`, `.tsx` → Check package.json
+
+2. **package.json lookup:**
+   - Walks up directory tree to find nearest package.json
+   - Checks `"type"` field: `"module"` → ESM, otherwise → CommonJS
+
+3. **No configuration needed** for mixed projects
+
+**File Pattern Matching** — Glob patterns in `exclude` may require full paths. Use `extensions` for broader exclusions.
 
 ---
 

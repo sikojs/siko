@@ -5,6 +5,7 @@
 import * as babel from '@babel/core';
 import { BabelFileResult } from '@babel/core';
 import sikoInstrumentationPlugin from './babel-plugin';
+import { detectModuleType } from '../utils/module-detection';
 
 export interface InstrumentOptions {
   filename?: string;
@@ -20,9 +21,13 @@ export interface InstrumentResult {
  * Instrument JavaScript/TypeScript code
  */
 export function instrumentCode(code: string, options: InstrumentOptions = {}): string {
+  const moduleContext = options.filename
+    ? detectModuleType(options.filename)
+    : { moduleType: 'commonjs' as const };
+
   const result = babel.transformSync(code, {
     filename: options.filename || 'unknown.js',
-    plugins: [sikoInstrumentationPlugin],
+    plugins: [[sikoInstrumentationPlugin, { moduleType: moduleContext.moduleType }]],
     parserOpts: {
       sourceType: 'module',
       plugins: ['jsx', 'typescript'],
@@ -45,9 +50,13 @@ export function instrumentCodeWithMap(
   code: string,
   options: InstrumentOptions = {}
 ): InstrumentResult {
+  const moduleContext = options.filename
+    ? detectModuleType(options.filename)
+    : { moduleType: 'commonjs' as const };
+
   const result = babel.transformSync(code, {
     filename: options.filename || 'unknown.js',
-    plugins: [sikoInstrumentationPlugin],
+    plugins: [[sikoInstrumentationPlugin, { moduleType: moduleContext.moduleType }]],
     parserOpts: {
       sourceType: 'module',
       plugins: ['jsx', 'typescript'],

@@ -4,10 +4,15 @@
 
 import { PluginObj, types as t, NodePath } from '@babel/core';
 import { FunctionInfo } from '../runtime/types';
+import { ModuleType } from '../utils/module-detection';
 
 interface PluginState {
   filename: string;
   functions: FunctionInfo[];
+}
+
+interface PluginOptions {
+  moduleType?: ModuleType;
 }
 
 /**
@@ -53,6 +58,36 @@ function getFunctionName(path: NodePath): string {
   // Object property: { foo: function() {} }
   if (t.isObjectProperty(parent) && t.isIdentifier(parent.key)) {
     return parent.key.name;
+  }
+
+  // Walk up the tree to find a variable declarator
+  // This handles cases like: const Wrapped = React.memo(() => {})
+  // where the function is nested inside a call expression
+  let currentPath = path.parentPath;
+  while (currentPath) {
+    const currentParent = currentPath.parent;
+
+    // Check if we found a variable declarator
+    if (t.isVariableDeclarator(currentParent) && t.isIdentifier(currentParent.id)) {
+      return currentParent.id.name;
+    }
+
+    // Check if we found an assignment expression
+    if (t.isAssignmentExpression(currentParent) && t.isIdentifier(currentParent.left)) {
+      return currentParent.left.name;
+    }
+
+    // Stop if we reach certain node types that indicate we've gone too far
+    if (
+      t.isProgram(currentParent) ||
+      t.isFunctionDeclaration(currentParent) ||
+      t.isFunctionExpression(currentParent) ||
+      t.isArrowFunctionExpression(currentParent)
+    ) {
+      break;
+    }
+
+    currentPath = currentPath.parentPath;
   }
 
   return '<anonymous>';
@@ -148,28 +183,44 @@ function hasTrackingImport(path: NodePath<t.Program>): boolean {
 /**
  * Inject __siko_track import/require at top of file
  */
-function injectTrackingImport(path: NodePath<t.Program>): void {
+function injectTrackingImport(path: NodePath<t.Program>, moduleType: ModuleType): void {
   // Determine the package path - use relative path to the built siko package
   const packagePath = 'siko/dist/runtime';
 
-  // Create require statement: const { __siko_track } = require('siko/dist/runtime');
-  const requireStatement = t.variableDeclaration('const', [
-    t.variableDeclarator(
-      t.objectPattern([
-        t.objectProperty(t.identifier('__siko_track'), t.identifier('__siko_track'), false, true),
-      ]),
-      t.callExpression(t.identifier('require'), [t.stringLiteral(packagePath)])
-    ),
-  ]);
+  if (moduleType === 'esm') {
+    // Create ES import: import { __siko_track } from 'siko/dist/runtime';
+    const importStatement = t.importDeclaration(
+      [t.importSpecifier(t.identifier('__siko_track'), t.identifier('__siko_track'))],
+      t.stringLiteral(packagePath)
+    );
 
-  // Insert at the beginning of the file
-  path.node.body.unshift(requireStatement);
+    // Insert at the beginning of the file
+    path.node.body.unshift(importStatement);
+  } else {
+    // Create require statement: const { __siko_track } = require('siko/dist/runtime');
+    const requireStatement = t.variableDeclaration('const', [
+      t.variableDeclarator(
+        t.objectPattern([
+          t.objectProperty(t.identifier('__siko_track'), t.identifier('__siko_track'), false, true),
+        ]),
+        t.callExpression(t.identifier('require'), [t.stringLiteral(packagePath)])
+      ),
+    ]);
+
+    // Insert at the beginning of the file
+    path.node.body.unshift(requireStatement);
+  }
 }
 
 /**
  * Babel plugin to instrument functions
  */
-export default function sikoInstrumentationPlugin(): PluginObj<PluginState> {
+export default function sikoInstrumentationPlugin(
+  api: unknown,
+  options?: PluginOptions
+): PluginObj<PluginState> {
+  const moduleType = options?.moduleType || 'commonjs';
+
   return {
     name: 'siko-instrumentation',
 
@@ -184,7 +235,7 @@ export default function sikoInstrumentationPlugin(): PluginObj<PluginState> {
         enter(path) {
           // Only inject if we haven't already
           if (!hasTrackingImport(path)) {
-            injectTrackingImport(path);
+            injectTrackingImport(path, moduleType);
           }
         },
       },

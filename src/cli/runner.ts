@@ -9,6 +9,7 @@ import chalk from 'chalk';
 import * as babel from '@babel/core';
 import sikoInstrumentationPlugin from '../instrumentation/babel-plugin';
 import { DEFAULT_CONFIG, SikoConfig } from '../config/types';
+import { detectModuleType } from '../utils/module-detection';
 
 export interface RunOptions {
   clean?: boolean;
@@ -33,10 +34,11 @@ function getRuntimePath(): string {
 function instrumentFile(filePath: string): string {
   const code = fs.readFileSync(filePath, 'utf8');
   const runtimePath = getRuntimePath();
+  const moduleContext = detectModuleType(filePath);
 
   const result = babel.transformSync(code, {
     filename: filePath,
-    plugins: [sikoInstrumentationPlugin],
+    plugins: [[sikoInstrumentationPlugin, { moduleType: moduleContext.moduleType }]],
     parserOpts: {
       sourceType: 'module',
       plugins: ['jsx', 'typescript'],
@@ -49,10 +51,11 @@ function instrumentFile(filePath: string): string {
     throw new Error(`Failed to instrument ${filePath}`);
   }
 
-  const instrumented = result.code.replace(
-    /require\(['"]siko\/dist\/runtime['"]\)/g,
-    `require('${runtimePath}')`
-  );
+  // Handle path replacement for both ESM and CommonJS
+  const instrumented =
+    moduleContext.moduleType === 'esm'
+      ? result.code.replace(/from ['"]siko\/dist\/runtime['"]/g, `from '${runtimePath}'`)
+      : result.code.replace(/require\(['"]siko\/dist\/runtime['"]\)/g, `require('${runtimePath}')`);
 
   // Save source map alongside instrumented file
   if (result.map) {

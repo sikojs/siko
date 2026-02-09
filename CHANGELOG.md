@@ -1,3 +1,44 @@
+## [0.4.5] - 2026-02-09
+
+### Added
+- **Full ES Module Support**
+  - Automatic module type detection (ESM vs CommonJS)
+  - Respects package.json "type" field
+  - .mjs and .cjs extension handling
+  - Mixed module project support
+  - ES import statements generated for ESM files
+  - CommonJS require maintained for CJS files
+
+- **Enhanced JSX/TSX Support**
+  - Comprehensive JSX pattern support validated
+  - React hooks, HOCs, fragments fully supported
+  - TypeScript generics with JSX
+  - Class component support
+  - Async components
+  - Conditional rendering
+  - Full test coverage for React patterns (26 new tests)
+
+- **Smart HOC Tracking**
+  - Functions passed to HOCs now tracked by variable name
+  - Works with React.memo, forwardRef, and custom HOCs
+  - AST tree walking to find variable assignments
+  - Examples: `const Wrapped = React.memo(() => {})` → Tracks "Wrapped"
+
+### Changed
+- Module import injection now context-aware (import vs require)
+- Babel plugin signature updated to properly handle options
+- Function name detection enhanced to walk up AST tree
+- Documentation updated to remove JSX/TSX limitations
+
+### Testing
+- Added 55 new tests (115% increase in test coverage)
+- 15 tests for module detection
+- 14 tests for ES module instrumentation
+- 26 tests for JSX/TSX patterns
+- All tests passing (116 total)
+
+---
+
 ## [0.4.4] - 2026-02-08
 
 ### Changed
@@ -135,42 +176,34 @@ This fixes JSX/TSX instrumentation issues in React projects.
 
 ### Planned
 
-#### v0.5.0
-- **Full JSX/TSX support** - Currently requires exclusion workaround, working on native React/JSX instrumentation
+#### v0.6.0
 - HTML report generation with interactive UI
 - Performance optimizations (parallel processing, caching)
-
-#### v0.6.0+
 - Watch mode for continuous analysis
 - Historical trend analysis and comparison
 - Integration with popular test frameworks (Jest plugins, Vitest integration)
+
+#### v0.7.0+
 - Browser environment support
 - Code coverage integration (merge with Istanbul/nyc)
 - IDE extensions (VSCode, WebStorm)
 
-#### Known Limitations
+#### Known Limitations (v0.4.5)
 
-**ES Modules Support**
-- siko currently only supports CommonJS projects
-- Projects with `"type": "module"` are not yet supported
-- Target: ES module support in v0.5.0
+**Truly Anonymous Functions**
+- Functions without any variable assignment are not instrumented
+- Example: `React.memo(() => {})` (no `const name =`) - not tracked
+- However: `const Name = React.memo(() => {})` - tracked as "Name" ✓
+- Functions must be assigned to a variable or have a name to be tracked
 
-**JSX/TSX Support**  
-- Limited support, requires exclusion workaround
-- Target: Full React/JSX support in v0.5.0
-- **Workaround**: Exclude .tsx/.jsx files in config:
-```json
-  {
-    "extensions": [".js", ".ts"],
-    "exclude": ["**/*.tsx", "**/*.jsx", "src/components/**"]
-  }
-```
+**Returned Anonymous Functions**
+- Functions returned without assignment are not tracked
+- Example in HOC: `return (props) => <div/>` - inner function not tracked
+- Workaround: Use named functions: `return function Wrapper(props) { ... }`
 
 **Current Best Use Cases:**
-- ✅ Node.js CommonJS backends
-- ✅ TypeScript libraries (CommonJS)
-- ✅ Traditional npm packages
-- ❌ ES module projects (Hono, modern Vite apps)
-- ❌ React/JSX projects (workaround available)
-
-- **Target**: Full React/JSX support in v0.5.0
+- ✅ Node.js backends (CommonJS and ESM)
+- ✅ TypeScript libraries (CommonJS and ESM)
+- ✅ React/JSX projects (including HOCs with variable assignment)
+- ✅ ES module projects
+- ✅ Mixed module environments
