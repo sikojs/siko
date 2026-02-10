@@ -51,12 +51,10 @@ function instrumentFile(filePath: string): string {
     throw new Error(`Failed to instrument ${filePath}`);
   }
 
-  // Handle path replacement for both ESM and CommonJS
-  // For ESM, use the .mjs wrapper to avoid CommonJS module issues
-  const instrumented =
-    moduleContext.moduleType === 'esm'
-      ? result.code.replace(/from ['"]siko\/dist\/runtime['"]/g, `from '${runtimePath}/index.mjs'`)
-      : result.code.replace(/require\(['"]siko\/dist\/runtime['"]\)/g, `require('${runtimePath}')`);
+  // Don't replace package imports with absolute paths. Injected imports use
+  // package subpath 'siko/runtime' so Node's resolver and TypeScript can
+  // correctly resolve modules and types via package exports.
+  const instrumented = result.code;
 
   // Save source map alongside instrumented file
   if (result.map) {

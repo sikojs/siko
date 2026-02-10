@@ -8,6 +8,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import * as fs from 'fs';
+import * as path from 'path';
 import {
   generateReport,
   generateJsonReport,
@@ -41,7 +42,7 @@ program
   .action(async (commandArgs: string[], options) => {
     try {
       // Load config
-      const config = loadConfig(options.config);
+  const config = await loadConfig(options.config);
       validateConfig(config);
 
       const exitCode = await runWithInstrumentation(commandArgs, {
@@ -75,7 +76,7 @@ program
   .action(async (options) => {
     try {
       // Load config
-      const config = loadConfig(options.config);
+  const config = await loadConfig(options.config);
       validateConfig(config);
 
       const inventoryPath = config.output?.inventory || '.siko-signal.inventory.json';
@@ -164,14 +165,45 @@ program
   .option('-f, --format <format>', 'Config format: js or json', 'json')
   .action((options) => {
     const format = options.format;
-    const filename = format === 'js' ? 'siko.config.js' : 'siko.config.json';
+
+    // If user explicitly requested JSON, just write JSON
+    if (format === 'json') {
+      const filename = 'siko.config.json';
+
+      if (fs.existsSync(filename)) {
+        console.log(chalk.yellow(`⚠️  ${filename} already exists`));
+        process.exit(1);
+      }
+
+      const configContent = generateJsonConfig();
+      fs.writeFileSync(filename, configContent);
+      console.log(chalk.green(`✅ Created ${filename}`));
+      console.log(chalk.gray('\nEdit the file to customize your configuration.'));
+      return;
+    }
+
+    // Format === 'js' (default) - detect project type and choose ESM or CJS
+    let pkgType: 'module' | 'commonjs' = 'commonjs';
+    try {
+      const pkgPath = path.join(process.cwd(), 'package.json');
+      if (fs.existsSync(pkgPath)) {
+        const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as { type?: string };
+        pkgType = pkg.type === 'module' ? 'module' : 'commonjs';
+      }
+    } catch (e) {
+      // ignore parse errors and fall back to commonjs
+      pkgType = 'commonjs';
+    }
+
+    const isEsm = pkgType === 'module';
+    const filename = isEsm ? 'siko.config.js' : 'siko.config.cjs';
 
     if (fs.existsSync(filename)) {
       console.log(chalk.yellow(`⚠️  ${filename} already exists`));
       process.exit(1);
     }
 
-    const configContent = format === 'js' ? generateJsConfig() : generateJsonConfig();
+    const configContent = isEsm ? generateJsConfig() : generateCjsConfig();
 
     fs.writeFileSync(filename, configContent);
     console.log(chalk.green(`✅ Created ${filename}`));
@@ -186,9 +218,9 @@ program
   .command('clean')
   .description('Remove execution data files')
   .option('-c, --config <path>', 'Path to config file')
-  .action((options) => {
+  .action(async (options) => {
     try {
-      const config = loadConfig(options.config);
+      const config = await loadConfig(options.config);
 
       const files = [
         config.output?.inventory || '.siko-signal.inventory.json',
@@ -229,7 +261,9 @@ program.parse();
  * Generate JS config template
  */
 function generateJsConfig(): string {
-  return `module.exports = {
+  // Generate an ES module style config so that projects with "type": "module"
+  // don't get a .js config file that contains CommonJS `module.exports`.
+  return `export default {
   // Directories to include for instrumentation
   include: ['src', 'lib', 'app'],
 
@@ -306,4 +340,54 @@ function generateJsonConfig(): string {
       2
     ) + '\n'
   );
+}
+
+/**
+ * Generate CommonJS config template (.cjs)
+ */
+function generateCjsConfig(): string {
+  return `module.exports = {
+  // Directories to include for instrumentation
+  include: ['src', 'lib', 'app'],
+
+  // Patterns to exclude from instrumentation
+  exclude: [
+    'node_modules',
+    'dist',
+    'build',
+    'coverage',
+    '*.test.js',
+    '*.spec.js'
+  ],
+
+  // File extensions to instrument
+  extensions: ['.js', '.jsx', '.ts', '.tsx'],
+
+  // Output file paths
+  output: {
+    inventory: '.siko-signal.inventory.json',
+    execution: '.siko-signal.exec.json'
+  },
+
+  // Source map configuration
+  sourceMaps: {
+    enabled: true
+  },
+
+  // Threshold configuration for CI
+  thresholds: {
+    // Minimum coverage percentage (0-100)
+    coverage: 80,
+    // Maximum number of unused functions
+    maxUnused: 10
+  },
+
+  // Report configuration
+  report: {
+    format: 'terminal', // 'terminal', 'json', or 'both'
+    verbose: false,
+    showAll: false
+  }
+};
+`;
 }

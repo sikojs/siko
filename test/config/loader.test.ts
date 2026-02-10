@@ -17,15 +17,15 @@ describe('Config Loader', () => {
     }
   });
 
-  test('should load default config when no file exists', () => {
-    const config = loadConfig();
+  test('should load default config when no file exists', async () => {
+    const config = await loadConfig();
 
     expect(config.include).toContain('src');
     expect(config.exclude).toContain('node_modules');
     expect(config.extensions).toContain('.js');
   });
 
-  test('should load JSON config file', () => {
+  test('should load JSON config file', async () => {
     const testConfig: Partial<SikoConfig> = {
       include: ['custom-src'],
       thresholds: {
@@ -35,20 +35,20 @@ describe('Config Loader', () => {
 
     fs.writeFileSync(testConfigPath, JSON.stringify(testConfig));
 
-    const config = loadConfig(testConfigPath);
+    const config = await loadConfig(testConfigPath);
 
     expect(config.include).toEqual(['custom-src']);
     expect(config.thresholds?.coverage).toBe(90);
   });
 
-  test('should merge custom config with defaults', () => {
+  test('should merge custom config with defaults', async () => {
     const testConfig: Partial<SikoConfig> = {
       include: ['custom-src'],
     };
 
     fs.writeFileSync(testConfigPath, JSON.stringify(testConfig));
 
-    const config = loadConfig(testConfigPath);
+    const config = await loadConfig(testConfigPath);
 
     // Custom value
     expect(config.include).toEqual(['custom-src']);
