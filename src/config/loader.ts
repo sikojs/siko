@@ -4,14 +4,26 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { pathToFileURL } from 'url';
 import { SikoConfig, DEFAULT_CONFIG } from './types';
+import { detectModuleType } from '../utils/module-detection';
+// Use an indirect dynamic import to avoid TypeScript transpiling `import()` to `require()`
+// which breaks when using file:// URLs. `new Function` preserves the runtime import.
+const dynamicImport = (s: string) => new Function('s', 'return import(s)')(s) as Promise<any>;
 
-const CONFIG_FILES = ['siko.config.js', 'siko.config.json', '.sikorc.json', '.sikorc.js'];
+const CONFIG_FILES = [
+  'siko.config.js',
+  'siko.config.cjs',
+  'siko.config.json',
+  '.sikorc.json',
+  '.sikorc.js',
+  '.sikorc.cjs',
+];
 
 /**
  * Load configuration from file
  */
-export function loadConfig(configPath?: string): SikoConfig {
+export async function loadConfig(configPath?: string): Promise<SikoConfig> {
   let config: Partial<SikoConfig> = {};
 
   // If explicit path provided, use it
@@ -19,13 +31,13 @@ export function loadConfig(configPath?: string): SikoConfig {
     if (!fs.existsSync(configPath)) {
       throw new Error(`Config file not found: ${configPath}`);
     }
-    config = loadConfigFile(configPath);
+    config = await loadConfigFile(configPath);
   } else {
     // Search for config file in current directory
     for (const filename of CONFIG_FILES) {
       const filePath = path.join(process.cwd(), filename);
       if (fs.existsSync(filePath)) {
-        config = loadConfigFile(filePath);
+          config = await loadConfigFile(filePath);
         break;
       }
     }
@@ -38,20 +50,53 @@ export function loadConfig(configPath?: string): SikoConfig {
 /**
  * Load config from a specific file
  */
-function loadConfigFile(filePath: string): Partial<SikoConfig> {
+async function loadConfigFile(filePath: string): Promise<Partial<SikoConfig>> {
   const ext = path.extname(filePath);
 
   if (ext === '.json') {
     // Load JSON config
     const content = fs.readFileSync(filePath, 'utf8');
     return JSON.parse(content);
-  } else if (ext === '.js') {
-    // Load JS config
-    const absolutePath = path.resolve(filePath);
-    // Clear require cache
-    delete require.cache[absolutePath];
-    const module = require(absolutePath);
-    return module.default || module;
+  }
+
+  const absolutePath = path.resolve(filePath);
+
+  if (ext === '.cjs') {
+    // Load CommonJS config via require
+    try {
+      const resolved = require.resolve(absolutePath);
+      delete require.cache[resolved];
+    } catch (e) {
+      // ignore
+    }
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const mod = require(absolutePath);
+    return mod.default || mod;
+  }
+
+  if (ext === '.mjs') {
+    // Load ESM config via dynamic import
+  const mod = await dynamicImport(pathToFileURL(absolutePath).href);
+    return mod.default || mod;
+  }
+
+  if (ext === '.js') {
+    // Decide based on nearest package.json type
+    const moduleType = detectModuleType(absolutePath).moduleType;
+    if (moduleType === 'esm') {
+  const mod = await dynamicImport(pathToFileURL(absolutePath).href);
+  return mod.default || mod;
+    }
+
+    try {
+      const resolved = require.resolve(absolutePath);
+      delete require.cache[resolved];
+    } catch (e) {
+      // ignore
+    }
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const mod = require(absolutePath);
+    return mod.default || mod;
   }
 
   throw new Error(`Unsupported config file type: ${ext}`);

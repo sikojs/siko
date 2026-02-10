@@ -1,6 +1,6 @@
 {
   "name": "siko",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "description": "Runtime execution analyzer for JavaScript & TypeScript - identify dead code with confidence",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -11,6 +11,7 @@
     "build": "tsc && cp src/runtime/index.mjs dist/runtime/index.mjs",
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
+  "prepack": "npm run build",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -56,6 +57,13 @@
     "LICENSE",
     "CHANGELOG.md"
   ],
+  "exports": {
+    "./runtime": {
+      "import": "./dist/runtime/index.mjs",
+      "require": "./dist/runtime/index.js",
+      "types": "./dist/runtime/index.d.ts"
+    }
+  },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "@types/babel__core": "^7.20.5",

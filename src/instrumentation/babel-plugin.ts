@@ -184,8 +184,9 @@ function hasTrackingImport(path: NodePath<t.Program>): boolean {
  * Inject __siko_track import/require at top of file
  */
 function injectTrackingImport(path: NodePath<t.Program>, moduleType: ModuleType): void {
-  // Determine the package path - use relative path to the built siko package
-  const packagePath = 'siko/dist/runtime';
+  // Determine the package path - import the runtime via package subpath so
+  // Node and TypeScript resolve types via package exports.
+  const packagePath = 'siko/runtime';
 
   if (moduleType === 'esm') {
     // Create ES import: import { __siko_track } from 'siko/dist/runtime';
@@ -194,8 +195,64 @@ function injectTrackingImport(path: NodePath<t.Program>, moduleType: ModuleType)
       t.stringLiteral(packagePath)
     );
 
-    // Insert at the beginning of the file
-    path.node.body.unshift(importStatement);
+    // Insert near the top of the file but after any existing imports or
+    // prologue statements (e.g., "use strict"). This avoids placing our
+    // injected import before TypeScript reference comments or other
+    // important directives which can break type resolution in the
+    // consumer project.
+    let insertIndex = 0;
+    for (let i = 0; i < path.node.body.length; i++) {
+      const stmt = path.node.body[i];
+      // keep moving the index while we see import declarations or
+      // require-based variable declarations or expression statements
+      // (like 'use strict') so we insert after them.
+      if (t.isImportDeclaration(stmt)) {
+        insertIndex = i + 1;
+        continue;
+      }
+
+      if (t.isVariableDeclaration(stmt)) {
+        // check if it's a require(...) style import; if so, skip over it
+        const decl = stmt.declarations[0];
+        if (
+          decl &&
+          t.isCallExpression(decl.init) &&
+          t.isIdentifier(decl.init.callee) &&
+          decl.init.callee.name === 'require'
+        ) {
+          insertIndex = i + 1;
+          continue;
+        }
+      }
+
+      if (t.isExpressionStatement(stmt) && t.isStringLiteral(stmt.expression)) {
+        // likely a prologue like 'use strict'
+        insertIndex = i + 1;
+        continue;
+      }
+
+      break;
+    }
+
+    // Avoid inserting between a `// @ts-ignore` (or `@ts-expect-error`) and the
+    // statement it applies to. If the next statement(s) have leading comments
+    // with these directives, move the insertion point after them so the
+    // directive still applies to the intended node.
+    for (let j = insertIndex; j < path.node.body.length; j++) {
+      const nextStmt = path.node.body[j] as any;
+      const leading = nextStmt && nextStmt.leadingComments ? nextStmt.leadingComments : [];
+      const hasIgnore = leading.some((c: any) => {
+        const v = String(c.value || '').trim();
+        return v.startsWith('@ts-ignore') || v.startsWith('@ts-expect-error');
+      });
+      if (hasIgnore) {
+        insertIndex = j + 1;
+        continue;
+      }
+      break;
+    }
+
+    path.node.body.splice(insertIndex, 0, importStatement);
   } else {
     // Create require statement: const { __siko_track } = require('siko/dist/runtime');
     const requireStatement = t.variableDeclaration('const', [
@@ -207,9 +264,101 @@ function injectTrackingImport(path: NodePath<t.Program>, moduleType: ModuleType)
       ),
     ]);
 
-    // Insert at the beginning of the file
-    path.node.body.unshift(requireStatement);
+    // Insert near the top (after existing imports/prologues) to avoid
+    // interfering with TypeScript reference comments and directives.
+    let insertIndex = 0;
+    for (let i = 0; i < path.node.body.length; i++) {
+      const stmt = path.node.body[i];
+      if (t.isImportDeclaration(stmt)) {
+        insertIndex = i + 1;
+        continue;
+      }
+
+      if (t.isVariableDeclaration(stmt)) {
+        const decl = stmt.declarations[0];
+        if (
+          decl &&
+          t.isCallExpression(decl.init) &&
+          t.isIdentifier(decl.init.callee) &&
+          decl.init.callee.name === 'require'
+        ) {
+          insertIndex = i + 1;
+          continue;
+        }
+      }
+
+      if (t.isExpressionStatement(stmt) && t.isStringLiteral(stmt.expression)) {
+        insertIndex = i + 1;
+        continue;
+      }
+
+      break;
+    }
+
+    // Same protection for CommonJS insertion
+    for (let j = insertIndex; j < path.node.body.length; j++) {
+      const nextStmt = path.node.body[j] as any;
+      const leading = nextStmt && nextStmt.leadingComments ? nextStmt.leadingComments : [];
+      const hasIgnore = leading.some((c: any) => {
+        const v = String(c.value || '').trim();
+        return v.startsWith('@ts-ignore') || v.startsWith('@ts-expect-error');
+      });
+      if (hasIgnore) {
+        insertIndex = j + 1;
+        continue;
+      }
+      break;
+    }
+
+    path.node.body.splice(insertIndex, 0, requireStatement);
   }
+}
+
+/**
+ * Decide if a file should be skipped for injection.
+ * We skip files that reference runtime globals (Deno, Bun, globalThis),
+ * contain a TS `declare global` module, or include triple-slash reference
+ * comments. These files typically rely on top-level script behavior and
+ * adding imports can change how TypeScript treats them.
+ */
+function shouldSkipFileForInjection(path: NodePath<t.Program>): boolean {
+  // 1) Check for obvious AST nodes: identifiers named Deno or Bun,
+  //    member expressions with globalThis, or TS module declaration 'global'.
+  let skip = false;
+
+  path.traverse({
+    Identifier(p) {
+      if (p.node.name === 'Deno' || p.node.name === 'Bun') {
+        skip = true;
+        p.stop();
+      }
+    },
+    MemberExpression(p) {
+      if (t.isIdentifier(p.node.object) && p.node.object.name === 'globalThis') {
+        skip = true;
+        p.stop();
+      }
+    },
+    TSModuleDeclaration(p) {
+      // e.g. "declare global { ... }"
+      if (t.isIdentifier(p.node.id) && p.node.id.name === 'global') {
+        skip = true;
+        p.stop();
+      }
+    },
+  });
+
+  if (skip) return true;
+
+  // 2) Check top-level comments for triple-slash references
+  const comments = (((path as any).hub && (path as any).hub.file && ((path as any).hub.file.ast as any)?.comments) as any[]) || [];
+  for (const c of comments) {
+    if (c.value && c.value.includes('<reference')) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -233,6 +382,21 @@ export default function sikoInstrumentationPlugin(
       // Inject tracking import at the top of the file
       Program: {
         enter(path) {
+          // Surgical skip: some files (adapter/runtime-tests) rely on
+          // top-level script behavior, ambient declarations (Deno/Bun),
+          // or triple-slash references. Injecting imports into those
+          // files can change how TypeScript interprets them and break
+          // compilation. Detect and mark such files so we skip
+          // instrumentation entirely for them.
+          if (shouldSkipFileForInjection(path)) {
+            // mark plugin state to skip instrumenting functions in this file
+            // `this` is the plugin state for the current file
+            // use a non-standard property to avoid TypeScript complaints
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (this as any)._siko_skipInstrumentation = true;
+            return;
+          }
+
           // Only inject if we haven't already
           if (!hasTrackingImport(path)) {
             injectTrackingImport(path, moduleType);
@@ -242,6 +406,9 @@ export default function sikoInstrumentationPlugin(
 
       // Instrument function declarations: function foo() {}
       FunctionDeclaration(path, state) {
+        // respect file-level skip flag
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((this as any)._siko_skipInstrumentation) return;
         if (shouldSkipFunction(path)) return;
 
         const node = path.node;
@@ -274,6 +441,7 @@ export default function sikoInstrumentationPlugin(
 
       // Instrument function expressions: const foo = function() {}
       FunctionExpression(path, state) {
+        if ((this as any)._siko_skipInstrumentation) return;
         if (shouldSkipFunction(path)) return;
 
         const node = path.node;
@@ -303,6 +471,7 @@ export default function sikoInstrumentationPlugin(
 
       // Instrument arrow functions: const foo = () => {}
       ArrowFunctionExpression(path, state) {
+        if ((this as any)._siko_skipInstrumentation) return;
         if (shouldSkipFunction(path)) return;
 
         const node = path.node;
@@ -338,6 +507,7 @@ export default function sikoInstrumentationPlugin(
 
       // Instrument class methods: class Foo { bar() {} }
       ClassMethod(path, state) {
+        if ((this as any)._siko_skipInstrumentation) return;
         if (shouldSkipFunction(path)) return;
 
         const node = path.node;
@@ -367,6 +537,7 @@ export default function sikoInstrumentationPlugin(
 
       // Instrument object methods: { foo() {} }
       ObjectMethod(path, state) {
+        if ((this as any)._siko_skipInstrumentation) return;
         if (shouldSkipFunction(path)) return;
 
         const node = path.node;

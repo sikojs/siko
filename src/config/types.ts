@@ -88,6 +88,13 @@ export const DEFAULT_CONFIG: SikoConfig = {
     '*.test.ts',
     '*.spec.js',
     '*.spec.ts',
+    // Avoid instrumenting adapter/runtime-test/benchmark code by default —
+    // these contain runtime-specific globals (Bun, Deno) and top-level
+    // behavior that instrumentation can break. Consumers can opt-in by
+    // overriding config.include/exclude.
+    'src/adapter',
+    'runtime-tests',
+    'benchmarks',
   ],
   extensions: ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs'],
   output: {
